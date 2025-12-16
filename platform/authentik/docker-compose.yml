@@ -5,11 +5,9 @@ services:
     command: server
     restart: unless-stopped
     environment:
-      AUTHENTIK_SECRET_KEY: "change-me-to-a-long-random-string"
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: change-me-authentik-db
       AUTHENTIK_REDIS__HOST: geek-redis
     volumes:
       - ./media:/media
@@ -25,11 +23,9 @@ services:
     container_name: authentik-worker
     restart: unless-stopped
     environment:
-      AUTHENTIK_SECRET_KEY: "change-me-to-a-long-random-string"
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: change-me-authentik-db
       AUTHENTIK_REDIS__HOST: geek-redis
     volumes:
       - ./media:/media
