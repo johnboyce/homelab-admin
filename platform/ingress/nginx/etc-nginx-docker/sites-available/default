@@ -1,0 +1,51 @@
+server {
+  listen 80 default_server;
+  listen [::]:80 default_server;
+  server_name _;
+
+  # CasaOS at root (because it serves /css, /js, /img as absolute paths)
+  location / {
+    proxy_pass http://127.0.0.1:8888/;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_set_header Upgrade           $http_upgrade;
+    proxy_set_header Connection        $connection_upgrade;
+  }
+
+  # BookStack
+  location = /bookstack { return 301 /bookstack/; }
+  location /bookstack/ {
+    proxy_pass http://127.0.0.1:8080/;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Helps cookies behave under /bookstack/
+    proxy_cookie_path / /bookstack/;
+  }
+
+  # Cockpit / WebConsole
+  location = /webconsole { return 301 /webconsole/; }
+  location /webconsole/ {
+    proxy_pass http://127.0.0.1:9090/;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_set_header Upgrade           $http_upgrade;
+    proxy_set_header Connection        $connection_upgrade;
+
+    proxy_cookie_path / /webconsole/;
+  }
+}

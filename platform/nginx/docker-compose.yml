@@ -1,0 +1,17 @@
+services:
+  nginx:
+    image: nginx:1.25
+    container_name: geek-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/nginx-docker:/etc/nginx:ro
+      - /var/log/nginx:/var/log/nginx
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true

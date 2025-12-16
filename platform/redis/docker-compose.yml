@@ -1,0 +1,17 @@
+services:
+  redis:
+    image: redis:7
+    container_name: geek-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./data:/data
+    networks:
+      - geek-infra
+    # No ports exposed to LAN by default.
+    # ports:
+    #   - "6379:6379"
+
+networks:
+  geek-infra:
+    name: geek-infra

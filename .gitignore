@@ -1,0 +1,23 @@
+# Secrets / env files
+.env
+.env.*
+**/*.env
+**/*.key
+**/*.pem
+**/*private*
+**/*secret*
+**/secrets/*
+**/secret/*
+**/certs/*.key
+
+# Data directories (never commit)
+**/pgdata/
+**/data/
+**/redis/data/
+**/backups/
+backups/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
