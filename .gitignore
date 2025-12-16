@@ -1,7 +1,11 @@
-# Secrets / env files
+# Secrets / env files (allow .env.example files)
 .env
-.env.*
+.env.local
+.env.production
+.env.development
+.env.test
 **/*.env
+!**/*.env.example
 **/*.key
 **/*.pem
 **/*private*
