@@ -129,8 +129,9 @@ All services communicate over the geek-infra Docker network
 4. **Start Authentik** (requires PostgreSQL):
    ```bash
    cd ../authentik
-   # Set required environment variable
+   # Set required environment variables
    export AUTHENTIK_OUTPOST_TOKEN="your-token-here"
+   export AUTHENTIK_POSTGRESQL_PASSWORD="your-authentik-db-password"
    docker-compose up -d
    ```
 
@@ -204,6 +205,7 @@ make diff-nginx
 
 **Configuration**:
 - Requires `AUTHENTIK_OUTPOST_TOKEN` environment variable
+- Requires `AUTHENTIK_POSTGRESQL_PASSWORD` environment variable (or configure PostgreSQL for trust authentication)
 - PostgreSQL database: `authentik`
 - Accessible at `http://auth.geek` (internal) and `https://auth.johnnyblabs.com` (public)
 

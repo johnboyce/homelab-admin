@@ -8,6 +8,7 @@ services:
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:-}
     volumes:
       - ./media:/media
       - ./custom-templates:/templates
@@ -25,6 +26,7 @@ services:
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:-}
     volumes:
       - ./media:/media
       - ./custom-templates:/templates

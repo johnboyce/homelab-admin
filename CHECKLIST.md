@@ -24,8 +24,8 @@ This document tracks the current state of the homelab-admin repository and lists
 ### High Priority
 
 - [ ] **Environment Variable Management**: Create `.env.example` files for all services that need environment variables
-  - [ ] Authentik: Document required `AUTHENTIK_OUTPOST_TOKEN` and PostgreSQL password
-  - [ ] PostgreSQL: Document password configuration
+  - [ ] Authentik: Document required `AUTHENTIK_OUTPOST_TOKEN` and `AUTHENTIK_POSTGRESQL_PASSWORD`
+  - [ ] PostgreSQL: Document password configuration and authentik user setup
   - [ ] Other services as needed
 
 - [ ] **Database Initialization**: Document or automate PostgreSQL database creation for authentik
