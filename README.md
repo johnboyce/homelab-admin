@@ -195,7 +195,7 @@ make diff-nginx
   - `authentik-server` (UI/API on port 9000)
   - `authentik-worker` (background tasks)
   - `authentik-outpost` (forward auth proxy)
-- **Image**: `ghcr.io/goauthentik/server:2025.8`
+- **Image**: `ghcr.io/goauthentik/server:2025.10.3`
 - **Dependencies**: PostgreSQL only (Redis removed in 2025.8+)
 - **Features**:
   - Single Sign-On (SSO) for all services
@@ -209,6 +209,7 @@ make diff-nginx
 
 **Version Notes**:
 - **2025.8+**: Redis dependency removed. Authentik now uses PostgreSQL for all caching, tasks, WebSocket connections, and the embedded outpost session store.
+- **Current Version**: 2025.10.3
 - **Migration Impact**: Expect ~50% more PostgreSQL connections compared to Redis-based versions.
 - **Configuration**: All Redis-related settings (`AUTHENTIK_REDIS__HOST`, etc.) have been removed.
 
@@ -335,7 +336,7 @@ docker exec geek-redis redis-cli BGSAVE
    ```
    
    This will:
-   - Pull the new authentik images (2025.8)
+   - Pull the new authentik images (2025.10.3)
    - Restart authentik services
    - Display status and verification URLs
 

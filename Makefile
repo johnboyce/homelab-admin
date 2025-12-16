@@ -24,7 +24,7 @@ diff-nginx:
 deploy-authentik:
 	@echo "== Deploying Authentik upgrades to geek =="
 	@echo "⚠️  This will pull new images and restart authentik services"
-	@echo "⚠️  Redis is no longer required by authentik 2025.8+"
+	@echo "⚠️  Upgrading to version 2025.10.3 (Redis no longer required)"
 	@read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \

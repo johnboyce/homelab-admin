@@ -13,7 +13,7 @@ This document tracks the current state of the homelab-admin repository and lists
 - [x] **Docker Networking**: All services use the `geek-infra` external network
 - [x] **nginx Management**: Makefile targets for testing and reloading nginx configuration
 - [x] **Config Sync**: Script to sync live nginx config to repository
-- [x] **Authentik Upgrade**: Migrated to version 2025.8+ with Redis dependency removed
+- [x] **Authentik Upgrade**: Migrated to version 2025.10.3 with Redis dependency removed
 
 ## 🔄 In Progress
 
@@ -123,9 +123,9 @@ This document tracks the current state of the homelab-admin repository and lists
 
 ## 🎯 Current Focus
 
-**Authentik Upgrade to 2025.8+**: Migrating from Redis-dependent version to PostgreSQL-only architecture.
+**Authentik Upgrade to 2025.10.3**: Migrating from Redis-dependent version to PostgreSQL-only architecture.
 
-- Upgraded to version 2025.8
+- Upgraded to version 2025.10.3
 - Removed Redis environment variables from authentik configuration
 - Redis container can be evaluated for removal if no other services use it
 - Need to deploy changes to production
