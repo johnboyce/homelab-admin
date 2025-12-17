@@ -4,6 +4,8 @@ services:
     container_name: authentik-server
     command: server
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
@@ -23,6 +25,8 @@ services:
     image: ghcr.io/goauthentik/server:2025.10.3
     container_name: authentik-worker
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
@@ -40,6 +44,8 @@ services:
     image: ghcr.io/goauthentik/proxy:2025.10.3
     container_name: authentik-outpost
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       AUTHENTIK_HOST: http://authentik-server:9000
       AUTHENTIK_HOST_BROWSER: https://auth.geek

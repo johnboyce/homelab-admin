@@ -29,12 +29,12 @@ deploy-authentik:
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		cd platform/authentik && \
-		docker-compose pull && \
-		docker-compose up -d && \
+		docker compose pull && \
+		docker compose up -d && \
 		echo "✅ Authentik deployed. Checking status..." && \
-		docker-compose ps && \
+		docker compose ps && \
 		echo "" && \
-		echo "📋 View logs with: cd platform/authentik && docker-compose logs -f" && \
+		echo "📋 View logs with: cd platform/authentik && docker compose logs -f" && \
 		echo "🔍 Verify at: https://auth.geek or https://auth.johnnyblabs.com"; \
 	else \
 		echo "❌ Deployment cancelled"; \
