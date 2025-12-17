@@ -13,6 +13,11 @@
 **/secrets/*
 **/secret/*
 **/certs/*.key
+**/*.crt
+**/*.cer
+**/*.p12
+**/*.pfx
+
 
 # Data directories (never commit)
 **/pgdata/
