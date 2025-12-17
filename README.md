@@ -458,6 +458,8 @@ docker logs -f geek-redis
 
 ## 📋 Makefile Targets
 
+> **Shell Compatibility**: All Makefile targets work with any shell (zsh, bash, fish, etc.). Commands that require bash-specific features explicitly invoke bash internally.
+
 ```bash
 make nginx-test        # Test nginx configuration syntax
 make nginx-reload      # Test and reload nginx (graceful)

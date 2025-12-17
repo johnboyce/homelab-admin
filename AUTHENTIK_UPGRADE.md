@@ -2,6 +2,8 @@
 
 This guide covers upgrading Authentik from older versions (pre-2025.8) that required Redis to version 2025.10.3, which no longer requires Redis.
 
+> **Note for zsh users**: All commands in this guide work with zsh, bash, or any POSIX-compatible shell. The `make deploy-authentik` command explicitly uses bash internally, so it works regardless of your default shell.
+
 ## Important Changes in Authentik 2025.8+
 
 - **Redis Dependency Removed**: Authentik now uses PostgreSQL for all caching, task queuing, WebSocket connections, and the embedded outpost session store
