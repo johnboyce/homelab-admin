@@ -35,7 +35,7 @@ deploy-authentik:
 	fi'
 
 authentik-config-dump:
-	@echo "== Show Authentik configs from Authetic API  =="
+	@echo "== Show Authentik configs from Authentik API  =="
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
 	@./scripts/authentik_inspect.sh
 
