@@ -1,9 +1,17 @@
-.PHONY: nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect
 
-nginx-test:
+preflight:
+	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
+	if [ -n "$$bad" ]; then \
+	  echo "❌ Repo contains non-owned file under platform/: $$bad"; \
+	  echo "   Fix with: sudo chown -R $$(id -un):$$(id -gn) platform"; \
+	  exit 1; \
+	fi
+
+nginx-test: preflight
 	docker exec geek-nginx nginx -t
 
-nginx-reload:
+nginx-reload: preflight
 	docker exec geek-nginx nginx -t
 	docker exec geek-nginx nginx -s reload
 
@@ -11,35 +19,20 @@ nginx-import:
 	@echo "== Importing nginx config from host (emergency/bootstrap only) =="
 	@bash scripts/nginx_import_from_host.sh
 
-nginx-deploy:
+nginx-deploy: preflight
 	@echo "== Deploying nginx config to host (normal workflow) =="
 	@bash scripts/nginx_deploy_to_host.sh
 
-deploy-authentik:
-	@echo "== Deploying Authentik upgrades to geek =="
-	@echo "⚠️  This will pull new images and restart authentik services"
-	@echo "⚠️  Upgrading to version 2025.10.3 (Redis no longer required)"
-	@bash -c 'read -p "Continue? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		cd platform/authentik && \
-		docker compose pull && \
-		docker compose up -d && \
-		echo "✅ Authentik deployed. Checking status..." && \
-		docker compose ps && \
-		echo "" && \
-		echo "📋 View logs with: cd platform/authentik && docker compose logs -f" && \
-		echo "🔍 Verify at: https://auth.geek or https://auth.johnnyblabs.com"; \
-	else \
-		echo "❌ Deployment cancelled"; \
-	fi'
-
-authentik-config-dump:
-	@echo "== Show Authentik configs from Authentik API  =="
+authentik-inspect:
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
 	./scripts/authentik_inspect.sh
 
-bookstack-oidc-bootstrap:
-	@echo "== Deploying Bookstack config if required =="
+authentik-config-dump:
+	@echo "== Dumping Authentik config snapshots (sanitized) =="
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
-	o./scripts/bookstack_oidc_bootstrap.sh
+	./scripts/authentik_dump.sh
+
+bookstack-oidc-bootstrap:
+	@echo "== Bootstrapping Authentik BookStack OIDC (if required) =="
+	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
+	./scripts/bookstack_oidc_bootstrap.sh
