@@ -1,7 +1,4 @@
-BACKUP_DIR := _backup/etc-nginx-docker
-LIVE_DIR := /etc/nginx-docker
-
-.PHONY: nginx-test nginx-reload backup-nginx diff-nginx deploy-authentik
+.PHONY: nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik
 
 nginx-test:
 	docker exec geek-nginx nginx -t
@@ -10,16 +7,13 @@ nginx-reload:
 	docker exec geek-nginx nginx -t
 	docker exec geek-nginx nginx -s reload
 
-backup-nginx:
-	@echo "== Sync live nginx config -> $(BACKUP_DIR) (excluding cert private keys) =="
-	sudo rsync -av --delete \
-	  --exclude 'certs/*.key' \
-	  --exclude 'certs/*.pem' \
-	  --exclude 'certs/*priv*' \
-	  $(LIVE_DIR)/ $(BACKUP_DIR)/
+nginx-import:
+	@echo "== Importing nginx config from host (emergency/bootstrap only) =="
+	@bash scripts/nginx_import_from_host.sh
 
-diff-nginx:
-	sudo diff -ruN $(BACKUP_DIR) $(LIVE_DIR) || true
+nginx-deploy:
+	@echo "== Deploying nginx config to host (normal workflow) =="
+	@bash scripts/nginx_deploy_to_host.sh
 
 deploy-authentik:
 	@echo "== Deploying Authentik upgrades to geek =="
