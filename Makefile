@@ -37,9 +37,9 @@ deploy-authentik:
 authentik-config-dump:
 	@echo "== Show Authentik configs from Authentik API  =="
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
-	@./scripts/authentik_inspect.sh
+	./scripts/authentik_inspect.sh
 
 bookstack-oidc-bootstrap:
 	@echo "== Deploying Bookstack config if required =="
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
-	@./scripts/bookstack_oidc_bootstrap.sh
+	o./scripts/bookstack_oidc_bootstrap.sh
