@@ -8,7 +8,7 @@ This repository serves as the **source of truth** for homelab infrastructure on 
 
 - **Identity & Authentication**: Authentik SSO for unified authentication across services
 - **Reverse Proxy & TLS**: nginx-based ingress with HTTPS termination
-- **Data Services**: Shared PostgreSQL and Redis instances
+- **Data Services**: Shared PostgreSQL instance (Redis optional for other services)
 - **Configuration Management**: Version-controlled configs with safe secret handling
 
 The setup supports both internal `.geek` domains for LAN access and public `johnnyblabs.com` domains with TLS for internet-facing services.
@@ -41,10 +41,13 @@ The setup supports both internal `.geek` domains for LAN access and public `john
     │  Shared Services     │
     │                      │
     │  - PostgreSQL:5432   │
-    │  - Redis:6379        │
+    │  - Redis:6379 *      │
     └──────────────────────┘
 
 All services communicate over the geek-infra Docker network
+
+* Redis is optional - no longer required by authentik 2025.8+
+  May be used by other services in the future
 ```
 
 ### Network Design
@@ -111,20 +114,27 @@ All services communicate over the geek-infra Docker network
    docker network create geek-infra
    ```
 
-3. **Start data services first** (PostgreSQL and Redis):
+3. **Start data services first** (PostgreSQL):
    ```bash
    cd platform/postgres
    docker-compose up -d
+   ```
    
+   **Note**: Redis is optional. Authentik 2025.8+ no longer requires Redis. If you have other services that need Redis, you can start it:
+   ```bash
    cd ../redis
    docker-compose up -d
    ```
 
-4. **Start Authentik** (requires PostgreSQL and Redis):
+4. **Start Authentik** (requires PostgreSQL):
    ```bash
    cd ../authentik
-   # Set required environment variable
-   export AUTHENTIK_OUTPOST_TOKEN="your-token-here"
+   # Copy and configure environment variables
+   cp .env.example .env
+   # Edit .env and set:
+   #   AUTHENTIK_SECRET_KEY (long random string)
+   #   AUTHENTIK_POSTGRESQL_PASSWORD (authentik database password)
+   #   AUTHENTIK_OUTPOST_TOKEN (outpost authentication token)
    docker-compose up -d
    ```
 
@@ -189,17 +199,27 @@ make diff-nginx
   - `authentik-server` (UI/API on port 9000)
   - `authentik-worker` (background tasks)
   - `authentik-outpost` (forward auth proxy)
-- **Image**: `ghcr.io/goauthentik/server:latest`
-- **Dependencies**: PostgreSQL, Redis
+- **Image**: `ghcr.io/goauthentik/server:2025.10.3`
+- **Dependencies**: PostgreSQL only (Redis removed in 2025.8+)
 - **Features**:
   - Single Sign-On (SSO) for all services
   - Forward authentication for nginx-protected apps
   - LDAP/SAML/OAuth support
 
 **Configuration**:
-- Requires `AUTHENTIK_OUTPOST_TOKEN` environment variable
+- See `platform/authentik/.env.example` for required environment variables
+- Required variables:
+  - `AUTHENTIK_SECRET_KEY`: Long random string for encryption
+  - `AUTHENTIK_POSTGRESQL_PASSWORD`: Password for authentik database user
+  - `AUTHENTIK_OUTPOST_TOKEN`: Token for outpost authentication
 - PostgreSQL database: `authentik`
 - Accessible at `http://auth.geek` (internal) and `https://auth.johnnyblabs.com` (public)
+
+**Version Notes**:
+- **2025.8+**: Redis dependency removed. Authentik now uses PostgreSQL for all caching, tasks, WebSocket connections, and the embedded outpost session store.
+- **Current Version**: 2025.10.3
+- **Migration Impact**: Expect ~50% more PostgreSQL connections compared to Redis-based versions.
+- **Configuration**: All Redis-related settings (`AUTHENTIK_REDIS__HOST`, etc.) have been removed.
 
 ### PostgreSQL Database
 
@@ -213,12 +233,13 @@ make diff-nginx
 - `postgres` (default)
 - `authentik` (for Authentik)
 
-### Redis Cache
+### Redis Cache (Optional)
 
 - **Container**: `geek-redis`
 - **Image**: `redis:7`
 - **Data**: Persisted in `./data/` with AOF (Append-Only File)
 - **Network**: Only accessible within `geek-infra` network
+- **Status**: No longer required by authentik 2025.8+. Available for other services that may need caching/queuing.
 
 ## 🔒 Security Practices
 
@@ -304,8 +325,57 @@ Data directories are gitignored but should be backed up regularly:
 # PostgreSQL
 docker exec geek-postgres pg_dumpall -U postgres > backup-$(date +%Y%m%d).sql
 
-# Redis
+# Redis (if using)
 docker exec geek-redis redis-cli BGSAVE
+```
+
+### Upgrading Authentik
+
+**Important**: Authentik 2025.8+ removed the Redis dependency. If upgrading from an older version:
+
+1. **Backup your data first**:
+   ```bash
+   docker exec geek-postgres pg_dump -U authentik authentik > authentik-backup-$(date +%Y%m%d).sql
+   ```
+
+2. **Deploy the upgrade**:
+   ```bash
+   make deploy-authentik
+   ```
+   
+   This will:
+   - Pull the new authentik images (2025.10.3)
+   - Restart authentik services
+   - Display status and verification URLs
+
+3. **Verify the upgrade**:
+   ```bash
+   # Check container status
+   docker ps | grep authentik
+   
+   # Check logs for errors
+   docker logs authentik-server
+   docker logs authentik-worker
+   
+   # Test web access
+   curl -Ik https://auth.geek
+   curl -Ik https://auth.johnnyblabs.com
+   ```
+
+4. **Post-upgrade notes**:
+   - Authentik now uses ~50% more PostgreSQL connections (migrated from Redis)
+   - All Redis-related environment variables have been removed
+   - If no other services use Redis, it can be stopped to free resources
+
+**Rollback**: If issues occur, restore from backup:
+```bash
+# Stop authentik
+cd platform/authentik && docker-compose down
+
+# Restore database
+cat authentik-backup-YYYYMMDD.sql | docker exec -i geek-postgres psql -U authentik -d authentik
+
+# Revert to previous version in docker-compose.yml and restart
 ```
 
 ## 🛠️ Troubleshooting
@@ -381,10 +451,11 @@ docker logs -f geek-redis
 ## 📋 Makefile Targets
 
 ```bash
-make nginx-test      # Test nginx configuration syntax
-make nginx-reload    # Test and reload nginx (graceful)
-make backup-nginx    # Sync live config to backup directory
-make diff-nginx      # Show differences between backup and live config
+make nginx-test        # Test nginx configuration syntax
+make nginx-reload      # Test and reload nginx (graceful)
+make backup-nginx      # Sync live config to backup directory
+make diff-nginx        # Show differences between backup and live config
+make deploy-authentik  # Deploy authentik upgrades to geek host
 ```
 
 ## 🔗 Related Documentation
