@@ -25,3 +25,7 @@ backups/
 .DS_Store
 .idea/
 .vscode/
+
+# Nginx certs: keep folder, never commit cert material
+platform/ingress/nginx/etc-nginx-docker/certs/*
+!platform/ingress/nginx/etc-nginx-docker/certs/.keep
