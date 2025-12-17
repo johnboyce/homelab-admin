@@ -1,4 +1,4 @@
-.PHONY: nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentic-config-dump
+.PHONY: nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump
 
 nginx-test:
 	docker exec geek-nginx nginx -t
@@ -34,7 +34,7 @@ deploy-authentik:
 		echo "❌ Deployment cancelled"; \
 	fi'
 
-authentic-config-dump:
+authentik-config-dump:
 	@echo "== Show Authentik configs from Authetic API  =="
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
 	@./scripts/authentik_inspect.sh
