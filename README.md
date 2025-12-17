@@ -133,7 +133,7 @@ All services communicate over the geek-infra Docker network
    cp .env.example .env
    # Edit .env and set:
    #   AUTHENTIK_SECRET_KEY (long random string)
-   #   AUTHENTIK_POSTGRESQL_PASSWORD (authentik database password)
+   #   AUTHENTIK_POSTGRESQL__PASSWORD (authentik database password - note double underscores)
    #   AUTHENTIK_OUTPOST_TOKEN (outpost authentication token)
    docker-compose up -d
    ```
@@ -210,7 +210,7 @@ make diff-nginx
 - See `platform/authentik/.env.example` for required environment variables
 - Required variables:
   - `AUTHENTIK_SECRET_KEY`: Long random string for encryption
-  - `AUTHENTIK_POSTGRESQL_PASSWORD`: Password for authentik database user
+  - `AUTHENTIK_POSTGRESQL__PASSWORD`: Password for authentik database user (note double underscores)
   - `AUTHENTIK_OUTPOST_TOKEN`: Token for outpost authentication
 - PostgreSQL database: `authentik`
 - Accessible at `http://auth.geek` (internal) and `https://auth.johnnyblabs.com` (public)
