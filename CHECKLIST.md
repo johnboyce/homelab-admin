@@ -11,8 +11,8 @@ This document tracks the current state of the homelab-admin repository and lists
 - [x] **Authentik SSO**: Identity provider configured with server, worker, and outpost components
 - [x] **Shared Services**: PostgreSQL and Redis containers for data services
 - [x] **Docker Networking**: All services use the `geek-infra` external network
-- [x] **nginx Management**: Makefile targets for testing and reloading nginx configuration
-- [x] **Config Sync**: Script to sync live nginx config to repository
+- [x] **nginx Management**: Makefile targets for testing, reloading, and deploying nginx configuration
+- [x] **Config Sync**: Bidirectional sync scripts (repo → host for normal workflow, host → repo for emergencies)
 - [x] **Authentik Upgrade**: Migrated to version 2025.10.3 with Redis dependency removed
 
 ## 🔄 In Progress

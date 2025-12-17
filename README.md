@@ -84,7 +84,8 @@ All services communicate over the geek-infra Docker network
 │   └── redis/                  # Shared Redis cache
 │       └── docker-compose.yml
 └── scripts/
-    └── sync_nginx_from_host.sh # Sync live nginx config to repo
+    ├── nginx_import_from_host.sh # Emergency: import live config to repo
+    └── nginx_deploy_to_host.sh   # Normal: deploy repo config to host
 ```
 
 ### Key Directories
@@ -180,17 +181,17 @@ All services communicate over the geek-infra Docker network
 
 **Common Commands**:
 ```bash
-# Test configuration
+# Test nginx configuration
 make nginx-test
 
 # Reload nginx (after config changes)
 make nginx-reload
 
-# Sync live config to repo
-./scripts/sync_nginx_from_host.sh
+# Deploy repo config to host (normal workflow)
+make nginx-deploy
 
-# View differences between repo and live config
-make diff-nginx
+# Import live config from host (emergency only)
+make nginx-import
 ```
 
 ### Authentik Identity Provider
@@ -268,15 +269,16 @@ Per `.gitignore`:
 
 ### Configuration Sync
 
-The live nginx configuration at `/etc/nginx-docker` is treated as the **live state**. This repo mirrors it for version control:
+This repository contains the **desired state** for nginx configuration. The normal workflow is **repo → host**:
 
-1. Make changes to `/etc/nginx-docker` on the host
-2. Test with `make nginx-test`
-3. Apply with `make nginx-reload`
-4. Sync to repo with `./scripts/sync_nginx_from_host.sh`
-5. Commit and push changes
+1. Edit configuration files in `platform/ingress/nginx/etc-nginx-docker/`
+2. Commit changes to version control
+3. Deploy to host with `make nginx-deploy`
+4. The deploy script will test configuration and prompt for reload
 
-The sync script automatically excludes private keys.
+**Exception**: Emergency hotfixes made directly on the host should be captured with `make nginx-import` and then committed to the repo. This is not the normal workflow.
+
+All scripts automatically exclude certificate private keys from syncing.
 
 ## 🔄 Common Workflows
 
@@ -298,15 +300,12 @@ The sync script automatically excludes private keys.
    ```bash
    make nginx-test
    ```
-3. If valid, reload nginx:
+3. Commit the changes to version control
+4. Deploy to the host:
    ```bash
-   make nginx-reload
+   make nginx-deploy
    ```
-4. Sync the changes to the repository:
-   ```bash
-   ./scripts/sync_nginx_from_host.sh
-   ```
-5. Commit and push to version control
+   This will test the configuration and prompt for reload
 
 ### Adding Forward Authentication to a Service
 
@@ -463,8 +462,8 @@ docker logs -f geek-redis
 ```bash
 make nginx-test        # Test nginx configuration syntax
 make nginx-reload      # Test and reload nginx (graceful)
-make backup-nginx      # Sync live config to backup directory
-make diff-nginx        # Show differences between backup and live config
+make nginx-deploy      # Deploy repo config to host (normal workflow)
+make nginx-import      # Import live config from host (emergency only)
 make deploy-authentik  # Deploy authentik upgrades to geek host
 ```
 
