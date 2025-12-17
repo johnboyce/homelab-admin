@@ -45,6 +45,7 @@ services:
     environment:
       AUTHENTIK_HOST: http://authentik-server:9000
       AUTHENTIK_HOST_BROWSER: https://auth.geek
+      # Map AUTHENTIK_OUTPOST_TOKEN from .env to AUTHENTIK_TOKEN for outpost
       AUTHENTIK_TOKEN: ${AUTHENTIK_OUTPOST_TOKEN}
     networks:
       - geek-infra
