@@ -32,7 +32,7 @@ sudo chown -R root:root "$DEST"
 sudo find "$DEST" -type d -exec chmod 755 {} \;
 sudo find "$DEST" -type f -exec chmod 644 {} \;
 
-# Preserve stricter permissions on private keys if they exist
+# Preserve stricter permissions on private keys if they exist (ignore if no cert files present)
 if [ -d "$DEST/certs" ]; then
   sudo find "$DEST/certs" -type f \( -name "*.key" -o -name "*.pem" \) -exec chmod 600 {} \; 2>/dev/null || true
 fi
