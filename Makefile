@@ -25,7 +25,7 @@ deploy-authentik:
 	@echo "== Deploying Authentik upgrades to geek =="
 	@echo "⚠️  This will pull new images and restart authentik services"
 	@echo "⚠️  Upgrading to version 2025.10.3 (Redis no longer required)"
-	@read -p "Continue? [y/N] " -n 1 -r; \
+	@bash -c 'read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		cd platform/authentik && \
@@ -38,4 +38,4 @@ deploy-authentik:
 		echo "🔍 Verify at: https://auth.geek or https://auth.johnnyblabs.com"; \
 	else \
 		echo "❌ Deployment cancelled"; \
-	fi
+	fi'

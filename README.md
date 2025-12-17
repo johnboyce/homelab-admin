@@ -331,7 +331,15 @@ docker exec geek-redis redis-cli BGSAVE
 
 ### Upgrading Authentik
 
-**Important**: Authentik 2025.8+ removed the Redis dependency. If upgrading from an older version:
+**Important**: Authentik 2025.8+ removed the Redis dependency. 
+
+**For detailed upgrade instructions**, see [AUTHENTIK_UPGRADE.md](AUTHENTIK_UPGRADE.md) for a comprehensive step-by-step guide including:
+- Pre-upgrade checklist and backups
+- Detailed upgrade steps
+- Post-upgrade Redis cleanup options
+- Troubleshooting and rollback procedures
+
+**Quick upgrade** (if you've already upgraded before):
 
 1. **Backup your data first**:
    ```bash
@@ -365,7 +373,7 @@ docker exec geek-redis redis-cli BGSAVE
 4. **Post-upgrade notes**:
    - Authentik now uses ~50% more PostgreSQL connections (migrated from Redis)
    - All Redis-related environment variables have been removed
-   - If no other services use Redis, it can be stopped to free resources
+   - If no other services use Redis, it can be stopped to free resources (see [AUTHENTIK_UPGRADE.md](AUTHENTIK_UPGRADE.md))
 
 **Rollback**: If issues occur, restore from backup:
 ```bash
