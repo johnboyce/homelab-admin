@@ -199,6 +199,7 @@ lan_services=(
   "http://auth.geek|Auth (Authentik)"
   "http://bookstack.geek|BookStack (Wiki)"
   "http://pihole.geek|Pi-hole (DNS)"
+  "http://192.168.1.187:8888|CasaOS (Host Dashboard)"
 )
 
 for service in "${lan_services[@]}"; do
