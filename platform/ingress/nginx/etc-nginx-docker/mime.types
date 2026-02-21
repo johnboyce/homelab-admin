@@ -1,4 +1,3 @@
-
 types {
     text/html                                        html htm shtml;
     text/css                                         css;
@@ -88,12 +87,10 @@ types {
     video/mp2t                                       ts;
     video/mp4                                        mp4;
     video/mpeg                                       mpeg mpg;
-    video/ogg                                        ogv;
     video/quicktime                                  mov;
     video/webm                                       webm;
     video/x-flv                                      flv;
     video/x-m4v                                      m4v;
-    video/x-matroska                                 mkv;
     video/x-mng                                      mng;
     video/x-ms-asf                                   asx asf;
     video/x-ms-wmv                                   wmv;
