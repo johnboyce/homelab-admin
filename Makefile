@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-firewall ansible-nginx
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -98,3 +98,28 @@ setup-firewall:
 	@echo ""
 	@echo "Or if the repo is cloned on geek:"
 	@echo "  ssh johnb@geek 'sudo bash ~/path/to/homelab-admin/scripts/setup_firewall.sh'"
+
+ansible-install:
+	@echo "== Installing Ansible collections =="
+	cd ansible && ansible-galaxy collection install -r requirements.yml
+
+ansible-status:
+	@echo "== Homelab Status (read-only, no changes) =="
+	@echo ""
+	cd ansible && ansible-playbook playbooks/status.yml
+
+ansible-dry-run:
+	@echo "== Ansible Dry-Run (--check --diff) =="
+	@echo "This shows what WOULD be changed without making any changes."
+	@echo ""
+	cd ansible && ansible-playbook playbooks/site.yml --check --diff
+
+ansible-firewall:
+	@echo "== Managing firewall rules with Ansible =="
+	@echo ""
+	cd ansible && ansible-playbook playbooks/firewall.yml
+
+ansible-nginx:
+	@echo "== Syncing nginx configuration with Ansible =="
+	@echo ""
+	cd ansible && ansible-playbook playbooks/nginx.yml

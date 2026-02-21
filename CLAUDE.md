@@ -65,6 +65,33 @@ sudo ufw delete [rule-number]
 
 See [docs/FIREWALL.md](docs/FIREWALL.md) for comprehensive firewall documentation.
 
+### Ansible Infrastructure Automation
+
+Ansible automates all infrastructure configuration while coexisting with existing shell scripts. Use it for idempotent, verifiable changes.
+
+```bash
+# Install Ansible collections (community.general, community.docker)
+make ansible-install
+
+# View current Ansible-managed state (read-only, no changes)
+make ansible-status
+
+# Dry-run: show what WOULD be changed without changing anything
+make ansible-dry-run
+
+# Apply firewall rules via Ansible (idempotent UFW management)
+make ansible-firewall
+
+# Apply nginx configuration via Ansible (config sync + reload)
+make ansible-nginx
+```
+
+**Key principle**: Always run `--check --diff` first (via `make ansible-dry-run`) before applying changes.
+
+**Port registry**: All ports are defined in `ansible/group_vars/all.yml`. UFW rules, nginx configs, and docker-compose files reference this single source of truth.
+
+See [ansible/STATUS.md](ansible/STATUS.md) for migration progress and phased implementation details.
+
 ### Verification (mandatory for ingress/TLS/identity changes)
 
 ```bash

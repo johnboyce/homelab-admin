@@ -1,0 +1,39 @@
+# Port Registry: Single Source of Truth
+# All docker-compose templates, nginx upstreams, and UFW rules derive from here
+
+services:
+  nginx:
+    http_port: 80
+    https_port: 443
+  authentik:
+    server_port: 9000
+    https_port: 9443
+  postgres:
+    port: 5432
+  ollama:
+    api_port: 8081
+    inference_port: 11434
+  cockpit:
+    port: 9090
+  casaos:
+    port: 8888
+  pihole:
+    dns_port: 53
+  vnc:
+    port: 5901
+  custom:
+    port: 7777
+
+# Network Topology
+network:
+  lan_subnet: "192.168.1.0/24"
+  docker_network: geek-infra
+  private_ranges:
+    - "192.168.0.0/16"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+
+# Domains
+domains:
+  internal_tld: geek
+  public_tld: johnnyblabs.com

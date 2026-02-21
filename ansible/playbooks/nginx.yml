@@ -1,0 +1,8 @@
+---
+# nginx configuration management playbook
+- name: Manage nginx configuration
+  hosts: geek
+  gather_facts: yes
+  roles:
+    - role: nginx
+      tags: [nginx, config]

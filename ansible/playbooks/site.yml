@@ -1,0 +1,17 @@
+---
+# Full homelab convergence playbook
+# Run all roles in order
+- name: Converge homelab-admin infrastructure
+  hosts: geek
+  gather_facts: yes
+  roles:
+    - role: firewall
+      tags: [firewall, bootstrap, config]
+    - role: nginx
+      tags: [nginx, config]
+    - role: docker_infra
+      tags: [docker, bootstrap]
+    - role: postgres
+      tags: [postgres, lifecycle]
+    - role: authentik
+      tags: [authentik, lifecycle]

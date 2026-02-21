@@ -1,0 +1,12 @@
+---
+# Docker infrastructure and services playbook
+- name: Manage Docker infrastructure and services
+  hosts: geek
+  gather_facts: yes
+  roles:
+    - role: docker_infra
+      tags: [docker, bootstrap]
+    - role: postgres
+      tags: [postgres, lifecycle]
+    - role: authentik
+      tags: [authentik, lifecycle]

@@ -1,0 +1,27 @@
+---
+- name: Homelab status (read-only)
+  hosts: geek
+  gather_facts: no
+  tasks:
+    - name: Check if ansible facts directory exists
+      stat:
+        path: /etc/ansible/facts.d
+      register: facts_dir
+
+    - name: Check homelab facts (Ansible-managed components)
+      slurp:
+        src: /etc/ansible/facts.d/homelab.fact
+      register: homelab_fact
+      when: facts_dir.stat.exists | bool
+      ignore_errors: yes
+
+    - name: Display Ansible-managed state
+      debug:
+        msg: |
+          Ansible-managed components:
+          {{ homelab_fact.content | b64decode | default('No managed components yet') }}
+      when: facts_dir.stat.exists | bool
+
+    - name: Check geek host connectivity
+      debug:
+        msg: "✓ Successfully connected to geek host ({{ ansible_host }})"

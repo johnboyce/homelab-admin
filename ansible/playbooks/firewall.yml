@@ -1,0 +1,8 @@
+---
+# Firewall management playbook
+- name: Manage UFW firewall rules
+  hosts: geek
+  gather_facts: yes
+  roles:
+    - role: firewall
+      tags: [firewall, bootstrap, config]

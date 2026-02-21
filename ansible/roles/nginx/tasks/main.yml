@@ -1,0 +1,101 @@
+---
+# nginx Configuration Management Role
+# Syncs nginx config from repo to host and validates/reloads in container
+
+- name: Ensure /etc/nginx-docker directory exists
+  file:
+    path: /etc/nginx-docker
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  tags: [nginx, config]
+
+- name: Sync nginx configuration from repo
+  synchronize:
+    src: "{{ playbook_dir | dirname }}/{{ playbook_dir | dirname }}/platform/ingress/nginx/etc-nginx-docker/"
+    dest: /etc/nginx-docker/
+    delete: no
+    checksum: yes
+    archive: yes
+    rsync_opts:
+      - "--exclude=certs/*.key"
+      - "--exclude=certs/johnnyblabs.key"
+      - "--delete-excluded"
+  tags: [nginx, config]
+  notify:
+    - Test nginx configuration
+    - Reload nginx
+
+- name: Set nginx directory permissions
+  file:
+    path: /etc/nginx-docker
+    owner: root
+    group: root
+    mode: '0755'
+    recurse: yes
+  become: yes
+  tags: [nginx, config]
+
+- name: Ensure certs directory exists with proper permissions
+  file:
+    path: /etc/nginx-docker/certs
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  become: yes
+  tags: [nginx, config]
+
+- name: Fix certificate file permissions
+  file:
+    path: "/etc/nginx-docker/certs/{{ item }}"
+    owner: root
+    group: root
+    mode: '0600'
+  become: yes
+  with_fileglob:
+    - "/etc/nginx-docker/certs/*.key"
+    - "/etc/nginx-docker/certs/*priv*"
+  ignore_errors: yes
+  tags: [nginx, config]
+
+- name: Fix public certificate permissions
+  file:
+    path: "/etc/nginx-docker/certs/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  with_fileglob:
+    - "/etc/nginx-docker/certs/*.crt"
+    - "/etc/nginx-docker/certs/*.pem"
+  ignore_errors: yes
+  tags: [nginx, config]
+
+- name: Update nginx managed state fact
+  copy:
+    dest: /etc/ansible/facts.d/homelab.fact
+    content: |
+      [managed]
+      firewall=true
+      nginx=true
+      nginx_managed_since={{ ansible_date_time.iso8601 }}
+    mode: '0644'
+  become: yes
+  tags: [nginx, config]
+
+handlers:
+  - name: Test nginx configuration
+    shell: docker exec geek-nginx nginx -t
+    register: nginx_test
+    changed_when: false
+    ignore_errors: yes
+    listen: "Test nginx configuration"
+
+  - name: Reload nginx
+    shell: docker exec geek-nginx nginx -s reload
+    register: nginx_reload
+    listen: "Reload nginx"
+    when: nginx_test.rc == 0

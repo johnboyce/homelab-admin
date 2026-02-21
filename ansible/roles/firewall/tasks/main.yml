@@ -1,0 +1,136 @@
+---
+# UFW Firewall Configuration Role
+# This role idempotently configures UFW rules derived from the port registry
+# All rules are driven by group_vars/all.yml for centralized management
+
+- name: Install UFW
+  apt:
+    name: ufw
+    state: present
+  become: yes
+  tags: [firewall, bootstrap]
+
+- name: Set UFW default incoming policy to deny
+  community.general.ufw:
+    default: deny
+    direction: incoming
+  become: yes
+  tags: [firewall, bootstrap, config]
+
+- name: Set UFW default outgoing policy to allow
+  community.general.ufw:
+    default: allow
+    direction: outgoing
+  become: yes
+  tags: [firewall, bootstrap, config]
+
+- name: Allow SSH (WAN - public)
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    comment: "SSH"
+  become: yes
+  tags: [firewall, config]
+
+- name: Allow Nginx Full (HTTP + HTTPS from anywhere)
+  community.general.ufw:
+    rule: allow
+    name: "Nginx Full"
+  become: yes
+  tags: [firewall, config]
+
+- name: Allow LAN-only services
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ network.lan_subnet }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto | default('tcp') }}"
+    comment: "{{ item.comment }}"
+  become: yes
+  loop:
+    - { port: "{{ services.cockpit.port }}", comment: "Cockpit LAN only" }
+    - { port: "{{ services.casaos.port }}", comment: "CasaOS LAN only" }
+    - { port: "{{ services.ollama.api_port }}", comment: "Ollama API LAN only" }
+    - { port: "{{ services.vnc.port }}", comment: "VNC LAN only" }
+  tags: [firewall, config]
+
+- name: Allow Pi-hole DNS (TCP + UDP from LAN)
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ network.lan_subnet }}"
+    port: "{{ services.pihole.dns_port }}"
+    proto: "{{ item }}"
+    comment: "Pi-hole DNS"
+  become: yes
+  loop: [tcp, udp]
+  tags: [firewall, config]
+
+- name: Block dangerous ports (RDP brute-force mitigation)
+  community.general.ufw:
+    rule: deny
+    port: "3389"
+    proto: tcp
+    comment: "Block RDP brute-force"
+  become: yes
+  tags: [firewall, config]
+
+- name: Block VNC from WAN (allow LAN only)
+  community.general.ufw:
+    rule: deny
+    port: "{{ services.vnc.port }}"
+    proto: tcp
+    comment: "Block VNC from WAN"
+  become: yes
+  tags: [firewall, config]
+
+- name: Allow public services (anywhere)
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+    comment: "Public service"
+  become: yes
+  loop:
+    - "{{ services.custom.port }}"
+    - "{{ services.ollama.inference_port }}"
+  tags: [firewall, config]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  become: yes
+  tags: [firewall, bootstrap]
+
+- name: Create ansible facts directory
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+    mode: '0755'
+  become: yes
+  tags: [firewall, bootstrap]
+
+- name: Write firewall managed state fact
+  copy:
+    dest: /etc/ansible/facts.d/homelab.fact
+    content: |
+      [managed]
+      firewall=true
+      firewall_managed_since={{ ansible_date_time.iso8601 }}
+    mode: '0644'
+  become: yes
+  tags: [firewall, bootstrap, config]
+
+- name: Display final firewall status
+  shell: ufw status numbered
+  register: ufw_status
+  changed_when: false
+  become: yes
+  tags: [firewall, config]
+
+- name: Report UFW rules
+  debug:
+    msg: |
+      Firewall rules applied:
+      {{ ufw_status.stdout }}
+  tags: [firewall, config]

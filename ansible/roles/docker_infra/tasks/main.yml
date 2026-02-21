@@ -1,0 +1,23 @@
+---
+# Docker Infrastructure Setup Role
+# Ensures Docker daemon is running and shared network exists
+
+- name: Ensure Docker network exists
+  community.docker.docker_network:
+    name: "{{ network.docker_network }}"
+    state: present
+  become: yes
+  tags: [docker, bootstrap]
+
+- name: Report Docker network status
+  community.docker.docker_network_info:
+    name: "{{ network.docker_network }}"
+  register: docker_network_info
+  tags: [docker, bootstrap]
+
+- name: Display Docker network info
+  debug:
+    msg: |
+      Docker network '{{ network.docker_network }}' is ready
+      ID: {{ docker_network_info.network.Id | default('unknown') }}
+  tags: [docker, bootstrap]
