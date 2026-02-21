@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -87,3 +87,14 @@ homelab-backup-restore:
 	else \
 		bash scripts/backup_postgresql.sh restore $(FILE); \
 	fi
+
+setup-firewall:
+	@echo "== Setting up UFW firewall rules on geek host =="
+	@echo ""
+	@echo "⚠️  This script must run ON the geek host, not from macbook."
+	@echo ""
+	@echo "Run this instead:"
+	@echo "  ssh johnb@geek 'bash ~/homelab-admin/scripts/setup_firewall.sh'"
+	@echo ""
+	@echo "Or if the repo is cloned on geek:"
+	@echo "  ssh johnb@geek 'sudo bash ~/path/to/homelab-admin/scripts/setup_firewall.sh'"
