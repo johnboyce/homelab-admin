@@ -5,15 +5,8 @@
 
 - name: Check PostgreSQL compose file exists
   stat:
-    path: /opt/platform/postgres/docker-compose.yml
+    path: /home/johnb/homelab-admin/platform/postgres/docker-compose.yml
   register: postgres_compose
-  tags: [postgres, lifecycle]
-
-- name: Verify PostgreSQL environment file
-  stat:
-    path: /opt/platform/postgres/.env
-  register: postgres_env
-  when: postgres_compose.stat.exists
   tags: [postgres, lifecycle]
 
 - name: Report PostgreSQL status
@@ -21,17 +14,14 @@
     msg: |
       PostgreSQL Status:
       - Compose file: {{ 'exists' if postgres_compose.stat.exists else 'missing' }}
-      - Environment file: {{ 'exists' if postgres_env.stat.exists else 'missing' }}
-
-      (Phase 5: Postgres container management not yet automated)
-      To enable: uncomment community.docker.docker_compose_v2 task below
+      - Service: Managed by Ansible (state: present, auto-pull enabled)
+  when: postgres_compose.stat.exists
   tags: [postgres, lifecycle]
 
-# TODO: Phase 5 - Uncomment when ready to automate service lifecycle
-# - name: Ensure PostgreSQL service is running
-#   community.docker.docker_compose_v2:
-#     project_src: /opt/platform/postgres
-#     state: present
-#     pull: policy
-#   become: yes
-#   tags: [postgres, lifecycle]
+- name: Ensure PostgreSQL service is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/postgres
+    state: present
+    pull: policy
+  become: yes
+  tags: [postgres, lifecycle]

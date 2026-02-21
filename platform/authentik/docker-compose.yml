@@ -7,9 +7,11 @@ services:
     env_file:
       - .env
     environment:
+      # AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
+      # AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:-}
     volumes:
       - ./media:/media
       - ./custom-templates:/templates
@@ -26,9 +28,11 @@ services:
     env_file:
       - .env
     environment:
+      # AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
+      # AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:-}
     volumes:
       - ./media:/media
       - ./custom-templates:/templates
@@ -44,12 +48,10 @@ services:
       - .env
     environment:
       AUTHENTIK_HOST: http://authentik-server:9000
-      AUTHENTIK_HOST_BROWSER: https://auth.geek
-      # Map AUTHENTIK_OUTPOST_TOKEN from .env to AUTHENTIK_TOKEN for outpost
+      AUTHENTIK_HOST_BROWSER: https://auth.johnnyblabs.com
       AUTHENTIK_TOKEN: ${AUTHENTIK_OUTPOST_TOKEN}
     networks:
       - geek-infra
-
 
     # Do NOT publish ports to the LAN; nginx will talk to it over the docker network.
     # ports:

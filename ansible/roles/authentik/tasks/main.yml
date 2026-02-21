@@ -5,15 +5,8 @@
 
 - name: Check Authentik compose file exists
   stat:
-    path: /opt/platform/authentik/docker-compose.yml
+    path: /home/johnb/homelab-admin/platform/authentik/docker-compose.yml
   register: authentik_compose
-  tags: [authentik, lifecycle]
-
-- name: Verify Authentik environment file
-  stat:
-    path: /opt/platform/authentik/.env
-  register: authentik_env
-  when: authentik_compose.stat.exists
   tags: [authentik, lifecycle]
 
 - name: Report Authentik status
@@ -21,21 +14,16 @@
     msg: |
       Authentik Status:
       - Compose file: {{ 'exists' if authentik_compose.stat.exists else 'missing' }}
-      - Environment file: {{ 'exists' if authentik_env.stat.exists else 'missing' }}
-
-      (Phase 5: Authentik container management not yet automated)
-      To enable: uncomment community.docker.docker_compose_v2 task below
-
-      Services:
+      - Service: Managed by Ansible (state: present, auto-pull enabled)
       - Server: https://auth.{{ domains.internal_tld }}
       - Public: https://auth.{{ domains.public_tld }}
+  when: authentik_compose.stat.exists
   tags: [authentik, lifecycle]
 
-# TODO: Phase 5 - Uncomment when ready to automate service lifecycle
-# - name: Ensure Authentik stack is running
-#   community.docker.docker_compose_v2:
-#     project_src: /opt/platform/authentik
-#     state: present
-#     pull: policy
-#   become: yes
-#   tags: [authentik, lifecycle]
+- name: Ensure Authentik stack is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/authentik
+    state: present
+    pull: policy
+  become: yes
+  tags: [authentik, lifecycle]
