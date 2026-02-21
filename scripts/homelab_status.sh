@@ -190,33 +190,69 @@ fi
 # COMMON SECTIONS (shown regardless of local vs remote)
 # ============================================================================
 
-# Service Endpoints (HTTP connectivity tests)
-echo -e "${BLUE}Service Endpoints${NC}"
-if [ "$VERBOSE" = "verbose" ]; then
-  # Only run these if verbose (they're slower)
-  endpoints=(
-    "http://auth.geek|Internal Auth"
-    "http://bookstack.geek|Internal BookStack"
-    "https://auth.johnnyblabs.com|Public Auth"
-    "https://bookstack.johnnyblabs.com|Public BookStack"
-  )
+# Service Accessibility (what's available)
+echo -e "${BLUE}Service Accessibility${NC}"
 
-  for endpoint in "${endpoints[@]}"; do
-    url="${endpoint%%|*}"
-    label="${endpoint##*|}"
+# LAN services (internal .geek domains)
+echo "LAN Access (HTTP - internal only):"
+lan_services=(
+  "http://auth.geek|Auth (Authentik)"
+  "http://bookstack.geek|BookStack (Wiki)"
+  "http://pihole.geek|Pi-hole (DNS)"
+)
+
+for service in "${lan_services[@]}"; do
+  url="${service%%|*}"
+  label="${service##*|}"
+
+  if [ "$VERBOSE" = "verbose" ]; then
+    # Test connectivity in verbose mode
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -k "$url" 2>/dev/null || echo "000")
-
     case "$RESPONSE" in
       200|302)
-        status_line "$label" "$(check_mark)" "HTTP $RESPONSE"
+        status_line "  • $label" "$(check_mark)" "$url"
         ;;
       *)
-        status_line "$label" "$(warning_mark)" "HTTP $RESPONSE"
+        status_line "  • $label" "$(warning_mark)" "$url (HTTP $RESPONSE)"
         ;;
     esac
-  done
-else
-  echo "(Run 'make homelab-status-verbose' for connectivity tests)"
+  else
+    # Just list what's configured (fast)
+    status_line "  • $label" "✓" "$url"
+  fi
+done
+
+echo ""
+echo "Internet Access (HTTPS - requires TLS cert):"
+internet_services=(
+  "https://auth.johnnyblabs.com|Auth (Authentik)"
+  "https://bookstack.johnnyblabs.com|BookStack (Wiki)"
+)
+
+for service in "${internet_services[@]}"; do
+  url="${service%%|*}"
+  label="${service##*|}"
+
+  if [ "$VERBOSE" = "verbose" ]; then
+    # Test connectivity in verbose mode (skip cert verification for self-signed)
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -k "$url" 2>/dev/null || echo "000")
+    case "$RESPONSE" in
+      200|302)
+        status_line "  • $label" "$(check_mark)" "$url"
+        ;;
+      *)
+        status_line "  • $label" "$(warning_mark)" "$url (HTTP $RESPONSE)"
+        ;;
+    esac
+  else
+    # Just list what's configured (fast)
+    status_line "  • $label" "✓" "$url"
+  fi
+done
+
+echo ""
+if [ "$VERBOSE" != "verbose" ]; then
+  echo "💡 Tip: Run 'make homelab-status-verbose' to test actual connectivity"
 fi
 echo ""
 
