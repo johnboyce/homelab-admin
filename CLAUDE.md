@@ -47,6 +47,24 @@ make authentik-config-dump
 make bookstack-oidc-bootstrap
 ```
 
+### Firewall Management
+
+```bash
+# View current firewall rules (on geek host)
+sudo ufw status numbered
+
+# Configure UFW (automated, runs on geek host)
+make setup-firewall
+
+# Add new LAN-only rule
+sudo ufw allow from 192.168.1.0/24 to any port XXXX proto tcp comment "Service name"
+
+# Delete a rule
+sudo ufw delete [rule-number]
+```
+
+See [docs/FIREWALL.md](docs/FIREWALL.md) for comprehensive firewall documentation.
+
 ### Verification (mandatory for ingress/TLS/identity changes)
 
 ```bash

@@ -165,6 +165,44 @@ All services communicate over the geek-infra Docker network
    curl -Ik https://bookstack.johnnyblabs.com
    ```
 
+## 📚 Documentation & Operational Guides
+
+This repository includes comprehensive documentation for setup, maintenance, and troubleshooting:
+
+| Document | Purpose |
+|----------|---------|
+| **[CLAUDE.md](CLAUDE.md)** | AI assistant guidance (architecture, workflows, conventions) |
+| **[ADMIN.md](ADMIN.md)** | Operational rules and non-negotiables |
+| **[docs/FIREWALL.md](docs/FIREWALL.md)** | UFW firewall rules, security policies, LAN vs WAN access |
+| **[docs/BACKUP.md](docs/BACKUP.md)** | PostgreSQL backup automation, recovery procedures, disaster recovery |
+| **[platform/ingress/nginx/README.md](platform/ingress/nginx/README.md)** | nginx configuration inventory, vhost structure, TLS management |
+
+### Make Targets for Operations
+
+Quick access to common tasks:
+
+```bash
+# Nginx Management
+make nginx-test                  # Test nginx syntax without reload
+make nginx-reload                # Test and gracefully reload nginx
+make nginx-deploy                # Deploy repo config to geek host
+make nginx-import                # Import live config from host (emergency)
+
+# Service Monitoring
+make homelab-status              # Quick status check (container state, services)
+make homelab-status-verbose      # Status + connectivity tests to all services
+make homelab-health              # Full health checks including Docker info
+make homelab-logs                # Show recent logs from all services
+
+# Data Protection
+make homelab-backup              # Create PostgreSQL backup
+make homelab-backup-list         # List available backups
+make homelab-backup-restore FILE=<backup> # Restore from backup
+
+# Infrastructure Setup
+make setup-firewall              # Configure UFW firewall rules (runs on geek host)
+```
+
 ## 🔧 Service Details
 
 ### nginx Reverse Proxy
