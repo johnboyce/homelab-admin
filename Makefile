@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -68,4 +68,22 @@ homelab-health:
 	@if docker ps &>/dev/null; then \
 		echo "== Docker System Info =="; \
 		docker system df 2>/dev/null || echo "(docker info not available)"; \
+	fi
+
+homelab-backup:
+	@bash scripts/backup_postgresql.sh backup
+
+homelab-backup-list:
+	@bash scripts/backup_postgresql.sh list
+
+homelab-backup-restore:
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Please specify backup file with FILE="; \
+		echo ""; \
+		echo "Example: make homelab-backup-restore FILE=backups/authentik_backup_20260221_130000.sql"; \
+		echo ""; \
+		echo "Available backups:"; \
+		bash scripts/backup_postgresql.sh list; \
+	else \
+		bash scripts/backup_postgresql.sh restore $(FILE); \
 	fi
