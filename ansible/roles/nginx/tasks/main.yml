@@ -14,15 +14,13 @@
 
 - name: Sync nginx configuration from repo
   synchronize:
-    src: "{{ playbook_dir | dirname }}/{{ playbook_dir | dirname }}/platform/ingress/nginx/etc-nginx-docker/"
+    src: "{{ playbook_dir | dirname | dirname }}/platform/ingress/nginx/etc-nginx-docker/"
     dest: /etc/nginx-docker/
     delete: no
     checksum: yes
     archive: yes
     rsync_opts:
-      - "--exclude=certs/*.key"
-      - "--exclude=certs/johnnyblabs.key"
-      - "--delete-excluded"
+      - "--exclude=certs/"
   tags: [nginx, config]
   notify:
     - Test nginx configuration
@@ -48,29 +46,25 @@
   become: yes
   tags: [nginx, config]
 
-- name: Fix certificate file permissions
+- name: Fix certificate file permissions (private keys)
   file:
-    path: "/etc/nginx-docker/certs/{{ item }}"
+    path: "{{ item }}"
     owner: root
     group: root
     mode: '0600'
   become: yes
-  with_fileglob:
-    - "/etc/nginx-docker/certs/*.key"
-    - "/etc/nginx-docker/certs/*priv*"
+  loop: "{{ query('fileglob', '/etc/nginx-docker/certs/*.key') + query('fileglob', '/etc/nginx-docker/certs/*priv*') }}"
   ignore_errors: yes
   tags: [nginx, config]
 
-- name: Fix public certificate permissions
+- name: Fix public certificate permissions (public certs)
   file:
-    path: "/etc/nginx-docker/certs/{{ item }}"
+    path: "{{ item }}"
     owner: root
     group: root
     mode: '0644'
   become: yes
-  with_fileglob:
-    - "/etc/nginx-docker/certs/*.crt"
-    - "/etc/nginx-docker/certs/*.pem"
+  loop: "{{ query('fileglob', '/etc/nginx-docker/certs/*.crt') + query('fileglob', '/etc/nginx-docker/certs/*.pem') }}"
   ignore_errors: yes
   tags: [nginx, config]
 
@@ -85,17 +79,3 @@
     mode: '0644'
   become: yes
   tags: [nginx, config]
-
-handlers:
-  - name: Test nginx configuration
-    shell: docker exec geek-nginx nginx -t
-    register: nginx_test
-    changed_when: false
-    ignore_errors: yes
-    listen: "Test nginx configuration"
-
-  - name: Reload nginx
-    shell: docker exec geek-nginx nginx -s reload
-    register: nginx_reload
-    listen: "Reload nginx"
-    when: nginx_test.rc == 0

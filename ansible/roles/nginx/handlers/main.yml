@@ -1,0 +1,15 @@
+---
+# nginx handlers - handlers are idempotent tasks triggered by notifications
+
+- name: Test nginx configuration
+  shell: docker exec geek-nginx nginx -t
+  register: nginx_test
+  changed_when: false
+  ignore_errors: yes
+  listen: "Test nginx configuration"
+
+- name: Reload nginx
+  shell: docker exec geek-nginx nginx -s reload
+  register: nginx_reload
+  listen: "Reload nginx"
+  when: nginx_test.rc == 0

@@ -112,14 +112,21 @@ ansible-dry-run:
 	@echo "== Ansible Dry-Run (--check --diff) =="
 	@echo "This shows what WOULD be changed without making any changes."
 	@echo ""
-	cd ansible && ansible-playbook playbooks/site.yml --check --diff
+	@echo "Tip: Pass ARGS to filter by tags, e.g.:"
+	@echo "  make ansible-dry-run ARGS='--tags firewall'"
+	@echo ""
+	cd ansible && ansible-playbook playbooks/site.yml --check --diff $(ARGS)
 
 ansible-firewall:
 	@echo "== Managing firewall rules with Ansible =="
 	@echo ""
-	cd ansible && ansible-playbook playbooks/firewall.yml
+	@echo "Tip: Add ARGS for dry-run: make ansible-firewall ARGS='--check --diff'"
+	@echo ""
+	cd ansible && ansible-playbook playbooks/firewall.yml $(ARGS)
 
 ansible-nginx:
 	@echo "== Syncing nginx configuration with Ansible =="
 	@echo ""
-	cd ansible && ansible-playbook playbooks/nginx.yml
+	@echo "Tip: Add ARGS for dry-run: make ansible-nginx ARGS='--check --diff'"
+	@echo ""
+	cd ansible && ansible-playbook playbooks/nginx.yml $(ARGS)
