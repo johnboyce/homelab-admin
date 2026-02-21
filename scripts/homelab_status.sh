@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# homelab_status.sh — Quick status check for geek homelab
+# homelab_status.sh — Smart status check for geek homelab
+# Adapts output based on where it's running (local vs remote access)
 # Usage: ./scripts/homelab_status.sh [verbose]
 #        make homelab-status
 #        make homelab-status-verbose
@@ -9,6 +10,7 @@ set -u  # Exit on undefined variables
 
 VERBOSE="${1:-}"
 GEEK_HOST="johnb@geek"
+CURRENT_HOST=$(hostname -s 2>/dev/null || echo "unknown")
 
 # Colors for output
 RED='\033[0;31m'
@@ -48,107 +50,147 @@ status_line() {
   fi
 }
 
-# Quick checks (no verbose needed)
-print_header "HOMELAB STATUS — $(date '+%Y-%m-%d %H:%M:%S')"
+# Determine if we're running on the geek host or remotely (macbook, etc.)
+IS_LOCAL_GEEK=false
+if [ "$CURRENT_HOST" = "geek" ]; then
+  IS_LOCAL_GEEK=true
+fi
+
+# Header with context
+if [ "$IS_LOCAL_GEEK" = true ]; then
+  print_header "HOMELAB STATUS (local: geek) — $(date '+%Y-%m-%d %H:%M:%S')"
+else
+  print_header "HOMELAB STATUS (remote control via SSH) — $(date '+%Y-%m-%d %H:%M:%S')"
+fi
 echo ""
 
-# Check if Docker is available locally
-if ! docker ps &>/dev/null; then
-  echo -e "${YELLOW}Note: Docker not available locally. Checking remote host (geek) instead.${NC}"
-  echo ""
-else
-  # 1. Docker Network
-  echo -e "${BLUE}Network (Local)${NC}"
-  if docker network ls 2>/dev/null | grep -q geek-infra; then
-    status_line "Docker network (geek-infra)" "$(check_mark)"
-  else
-    status_line "Docker network (geek-infra)" "$(cross_mark)"
-  fi
-  echo ""
+# ============================================================================
+# LOCAL SERVICES (only shown if running on geek host itself)
+# ============================================================================
+if [ "$IS_LOCAL_GEEK" = true ]; then
+  echo -e "${BLUE}Local Services${NC}"
 
-  # 2. Container Status
-  echo -e "${BLUE}Services (Local)${NC}"
-  RUNNING=$(docker ps 2>/dev/null --filter "label!=skip" | grep -E "(postgres|nginx|authentik|redis)" | wc -l)
-  if [ "$RUNNING" -gt 0 ]; then
-    status_line "Running containers" "$(check_mark)" "$RUNNING containers"
+  if ! docker ps &>/dev/null; then
+    status_line "Docker daemon" "$(cross_mark)"
+    echo ""
   else
-    status_line "Running containers" "$(warning_mark)" "none (likely remote only)"
-  fi
+    # Docker is available
+    status_line "Docker daemon" "$(check_mark)"
+    echo ""
 
-  # Check each critical service
-  for svc in geek-postgres geek-nginx authentik-server authentik-outpost; do
-    if docker ps 2>/dev/null | grep -q "$svc"; then
-      status_line "  $svc" "$(check_mark)" "running"
+    # Network
+    echo -e "${BLUE}Network${NC}"
+    if docker network ls 2>/dev/null | grep -q geek-infra; then
+      status_line "geek-infra network" "$(check_mark)"
+    else
+      status_line "geek-infra network" "$(cross_mark)"
     fi
-  done
-  echo ""
+    echo ""
 
-  # 3. nginx Configuration
-  echo -e "${BLUE}nginx (Local)${NC}"
-  if docker ps 2>/dev/null | grep -q geek-nginx; then
-    if docker exec geek-nginx nginx -t 2>&1 | grep -q successful; then
+    # Services
+    echo -e "${BLUE}Containers${NC}"
+    RUNNING=$(docker ps 2>/dev/null | grep -E "(postgres|nginx|authentik|redis)" | wc -l)
+    status_line "Running critical services" "$(check_mark)" "$RUNNING running"
+
+    for svc in geek-postgres geek-nginx authentik-server authentik-worker authentik-outpost geek-redis; do
+      if docker ps 2>/dev/null | grep -q "$svc"; then
+        status_line "  • $svc" "$(check_mark)"
+      else
+        status_line "  • $svc" "$(cross_mark)"
+      fi
+    done
+    echo ""
+
+    # nginx config check
+    echo -e "${BLUE}Configuration${NC}"
+    if docker ps 2>/dev/null | grep -q geek-nginx; then
+      if docker exec geek-nginx nginx -t 2>&1 | grep -q successful; then
+        status_line "nginx syntax" "$(check_mark)"
+      else
+        status_line "nginx syntax" "$(cross_mark)"
+        if [ "$VERBOSE" = "verbose" ]; then
+          docker exec geek-nginx nginx -t 2>&1 | sed 's/^/  /'
+        fi
+      fi
+    else
+      status_line "nginx syntax" "$(warning_mark)" "nginx not running"
+    fi
+    echo ""
+
+    # Database health
+    echo -e "${BLUE}Data Services${NC}"
+    if docker ps 2>/dev/null | grep -q geek-postgres; then
+      PG_READY=$(docker exec geek-postgres pg_isready -U postgres 2>/dev/null | grep "accepting" || echo "no")
+      if [ "$PG_READY" != "no" ]; then
+        status_line "PostgreSQL" "$(check_mark)" "ready"
+      else
+        status_line "PostgreSQL" "$(warning_mark)" "not ready"
+      fi
+    else
+      status_line "PostgreSQL" "$(cross_mark)" "not running"
+    fi
+
+    if docker ps 2>/dev/null | grep -q geek-redis; then
+      status_line "Redis" "$(check_mark)" "running"
+    else
+      status_line "Redis" "$(warning_mark)" "not running"
+    fi
+    echo ""
+  fi
+else
+  # ============================================================================
+  # REMOTE HOST STATUS (when running on macbook, etc. - accessing geek via SSH)
+  # ============================================================================
+  echo -e "${BLUE}Remote Host (geek)${NC}"
+  if ! ssh "$GEEK_HOST" "docker ps &>/dev/null" 2>/dev/null; then
+    status_line "SSH connection" "$(cross_mark)"
+    status_line "Docker daemon" "$(cross_mark)"
+    echo ""
+    echo "Cannot reach geek host. Check SSH connectivity:"
+    echo "  ssh $GEEK_HOST 'hostname'"
+  else
+    status_line "SSH connection" "$(check_mark)"
+    echo ""
+
+    # Get service list from remote
+    SERVICES=$(ssh "$GEEK_HOST" "docker ps --format '{{.Names}}' 2>/dev/null" || echo "")
+
+    echo -e "${BLUE}Containers${NC}"
+    for svc in geek-postgres geek-nginx authentik-server authentik-worker authentik-outpost geek-redis; do
+      if echo "$SERVICES" | grep -q "$svc"; then
+        status_line "  • $svc" "$(check_mark)"
+      else
+        status_line "  • $svc" "$(warning_mark)" "not running"
+      fi
+    done
+    echo ""
+
+    # Remote nginx config check
+    echo -e "${BLUE}Configuration${NC}"
+    NGINX_TEST=$(ssh "$GEEK_HOST" "docker exec geek-nginx nginx -t 2>&1" || echo "failed")
+    if echo "$NGINX_TEST" | grep -q "successful"; then
       status_line "nginx syntax" "$(check_mark)"
     else
       status_line "nginx syntax" "$(cross_mark)"
       if [ "$VERBOSE" = "verbose" ]; then
-        docker exec geek-nginx nginx -t 2>&1 | sed 's/^/  /'
+        echo "$NGINX_TEST" | sed 's/^/  /'
       fi
     fi
-  else
-    status_line "nginx syntax" "$(warning_mark)" "nginx not running locally"
-  fi
-  echo ""
 
-  # 4. PostgreSQL
-  echo -e "${BLUE}Database (Local)${NC}"
-  if docker ps 2>/dev/null | grep -q geek-postgres; then
-    PG_READY=$(docker exec geek-postgres pg_isready -U postgres 2>/dev/null | grep "accepting" || echo "no")
-    if [ "$PG_READY" != "no" ]; then
-      status_line "PostgreSQL ready" "$(check_mark)"
+    if ssh "$GEEK_HOST" "[ -d /etc/nginx-docker ]" 2>/dev/null; then
+      status_line "/etc/nginx-docker" "$(check_mark)"
     else
-      status_line "PostgreSQL ready" "$(warning_mark)"
+      status_line "/etc/nginx-docker" "$(cross_mark)"
     fi
-  else
-    status_line "PostgreSQL ready" "$(warning_mark)" "postgres not running locally"
+    echo ""
   fi
-  echo ""
-
-  # 5. Authentik Status
-  echo -e "${BLUE}Authentik (Local)${NC}"
-  if docker ps 2>/dev/null | grep -q authentik-server; then
-    AUTH_HEALTH=$(docker exec authentik-server curl -s http://localhost:9000/health/live/ -o /dev/null -w "%{http_code}" 2>/dev/null || echo "000")
-    if [ "$AUTH_HEALTH" = "204" ] || [ "$AUTH_HEALTH" = "200" ]; then
-      status_line "Authentik API" "$(check_mark)" "HTTP $AUTH_HEALTH"
-    else
-      status_line "Authentik API" "$(warning_mark)" "HTTP $AUTH_HEALTH"
-    fi
-  else
-    status_line "Authentik API" "$(warning_mark)" "authentik not running locally"
-  fi
-  echo ""
 fi
 
-# 6. Remote Host Status (via SSH)
-echo -e "${BLUE}Remote Host (geek)${NC}"
-if ssh "$GEEK_HOST" "docker ps &>/dev/null" 2>/dev/null; then
-  status_line "SSH connection" "$(check_mark)"
+# ============================================================================
+# COMMON SECTIONS (shown regardless of local vs remote)
+# ============================================================================
 
-  # Count remote containers
-  REMOTE_COUNT=$(ssh "$GEEK_HOST" "docker ps --format 'table {{.Names}}' 2>/dev/null" | grep -E "(postgres|nginx|authentik|redis)" | wc -l)
-  status_line "Remote containers running" "$(check_mark)" "$REMOTE_COUNT containers"
-
-  # Check /etc/nginx-docker
-  if ssh "$GEEK_HOST" "[ -d /etc/nginx-docker ]" 2>/dev/null; then
-    status_line "/etc/nginx-docker on host" "$(check_mark)"
-  else
-    status_line "/etc/nginx-docker on host" "$(cross_mark)"
-  fi
-else
-  status_line "SSH connection" "$(cross_mark)"
-fi
-echo ""
-
-# 7. Connectivity Tests
+# Service Endpoints (HTTP connectivity tests)
 echo -e "${BLUE}Service Endpoints${NC}"
 if [ "$VERBOSE" = "verbose" ]; then
   # Only run these if verbose (they're slower)
