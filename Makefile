@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-firewall ansible-nginx
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -116,6 +116,14 @@ ansible-dry-run:
 	@echo "  make ansible-dry-run ARGS='--tags firewall'"
 	@echo ""
 	cd ansible && ansible-playbook playbooks/site.yml --check --diff $(ARGS)
+
+ansible-apply:
+	@echo "== Applying Ansible Infrastructure Changes =="
+	@echo ""
+	@echo "Tip: Pass ARGS to filter by tags, e.g.:"
+	@echo "  make ansible-apply ARGS='--tags postgres,authentik'"
+	@echo ""
+	cd ansible && ansible-playbook playbooks/site.yml $(ARGS)
 
 ansible-firewall:
 	@echo "== Managing firewall rules with Ansible =="
