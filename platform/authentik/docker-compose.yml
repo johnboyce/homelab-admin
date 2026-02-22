@@ -51,7 +51,7 @@ services:
       AUTHENTIK_HOST_BROWSER: https://auth.johnnyblabs.com
       AUTHENTIK_TOKEN: ${AUTHENTIK_OUTPOST_TOKEN}
     tmpfs:
-      - /dev/shm
+      - /dev/shm:rw,size=256m,noexec,nodev,nosuid
     networks:
       - geek-infra
 
