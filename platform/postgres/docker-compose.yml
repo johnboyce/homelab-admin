@@ -3,8 +3,9 @@ services:
     image: postgres:16
     container_name: geek-postgres
     restart: unless-stopped
+    env_file:
+      - /etc/homelab/secrets/postgres.env
     environment:
-      POSTGRES_PASSWORD: change-me-postgres
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     volumes:
@@ -18,4 +19,4 @@ services:
 
 networks:
   geek-infra:
-    name: geek-infra
+    external: true

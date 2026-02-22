@@ -1,21 +1,21 @@
 ---
 # PostgreSQL Service Management Role
-# Manages PostgreSQL container and backup scheduling
-# Phase 5: Lifecycle management (current: stub)
+# Manages shared PostgreSQL container (used by Authentik and BookStack)
+# Secrets from /etc/homelab/secrets/postgres.env (root-readable)
 
-- name: Check PostgreSQL compose file exists
+- name: Check PostgreSQL secrets file exists
   stat:
-    path: /home/johnb/homelab-admin/platform/postgres/docker-compose.yml
-  register: postgres_compose
+    path: /etc/homelab/secrets/postgres.env
+  become: yes
+  register: postgres_secrets
   tags: [postgres, lifecycle]
 
-- name: Report PostgreSQL status
-  debug:
+- name: Fail if secrets file is missing
+  fail:
     msg: |
-      PostgreSQL Status:
-      - Compose file: {{ 'exists' if postgres_compose.stat.exists else 'missing' }}
-      - Service: Managed by Ansible (state: present, auto-pull enabled)
-  when: postgres_compose.stat.exists
+      /etc/homelab/secrets/postgres.env not found.
+      Required variables: POSTGRES_PASSWORD
+  when: not postgres_secrets.stat.exists
   tags: [postgres, lifecycle]
 
 - name: Ensure PostgreSQL service is running
