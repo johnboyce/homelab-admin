@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - ./data:/data
+      - /srv/homelab/redis/data:/data
     networks:
       - geek-infra
     # No ports exposed to LAN by default.
