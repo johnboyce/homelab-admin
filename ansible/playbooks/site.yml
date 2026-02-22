@@ -21,6 +21,8 @@
       tags: [nginx, config]
     - role: docker_infra
       tags: [docker, bootstrap]
+    - role: landing
+      tags: [landing, lifecycle]
     - role: postgres
       tags: [postgres, lifecycle]
     - role: authentik

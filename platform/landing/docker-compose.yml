@@ -1,0 +1,15 @@
+services:
+  landing:
+    image: nginx:1.29.4-alpine
+    container_name: geek-landing
+    restart: unless-stopped
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - geek-infra
+    # No ports exposed - nginx will proxy to it
+
+networks:
+  geek-infra:
+    external: true
