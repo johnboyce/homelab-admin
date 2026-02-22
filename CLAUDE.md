@@ -282,6 +282,8 @@ cd ~/homelab-admin/platform/authentik && docker compose restart
 - ✅ Always verify forward-auth patterns match bookstack template
 - ✅ Always use HTTP 302 (not 301) for auth redirects
 - ✅ Always set `X-Forwarded-Proto` to match the actual scheme (http vs https)
+- ✅ After restarting multiple containers, always reload nginx to flush DNS cache: `docker exec geek-nginx nginx -s reload`
+- ❌ Do not deploy services using `docker compose up -d` as `johnb` — secrets in `/etc/homelab/secrets/` require root. Use `make ansible-apply --tags <service>` instead
 
 ## When Uncertain
 
