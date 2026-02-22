@@ -45,11 +45,9 @@ services:
     environment:
       AUTHENTIK_HOST: http://authentik-server:9000
       AUTHENTIK_HOST_BROWSER: https://auth.johnnyblabs.com
-      # Use PostgreSQL for session storage (not in-memory)
-      AUTHENTIK_POSTGRESQL__HOST: geek-postgres
-      AUTHENTIK_POSTGRESQL__USER: authentik
-      AUTHENTIK_POSTGRESQL__NAME: authentik
       # AUTHENTIK_TOKEN comes directly from secrets file
+    volumes:
+      - /srv/homelab/authentik/outpost-sessions:/var/lib/authentik/outpost/sessions
     tmpfs:
       - /dev/shm:rw,size=256m,noexec,nodev,nosuid
     networks:
