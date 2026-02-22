@@ -1,0 +1,16 @@
+services:
+  cloudflare-ddns:
+    image: favonia/cloudflare-ddns:latest
+    container_name: geek-cloudflare-ddns
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
+      - DOMAINS=${DDNS_DOMAINS}
+      - PROXIED=false
+      - UPDATE_CRON=@every 5m
+      - IP_NETWORKS=all

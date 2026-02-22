@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik deploy-bookstack deploy-nginx deploy-pihole deploy-ollama bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik deploy-bookstack deploy-nginx deploy-pihole deploy-ollama deploy-cloudflare-ddns bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -44,6 +44,11 @@ deploy-ollama:
 	@echo "== Deploying Ollama to geek host =="
 	@ssh johnb@geek 'mkdir -p /srv/homelab/ollama && cd ~/homelab-admin/platform/ollama && docker compose pull && docker compose up -d'
 	@echo "== Ollama deployed — pull a model with: ssh johnb@geek docker exec geek-ollama ollama pull llama3.2:3b =="
+
+deploy-cloudflare-ddns:
+	@echo "== Deploying Cloudflare DDNS to geek host =="
+	@ssh johnb@geek 'cd ~/homelab-admin/platform/cloudflare-ddns && docker compose pull && docker compose up -d'
+	@echo "== Cloudflare DDNS deployed — updates public IP every 5 minutes =="
 
 authentik-inspect:
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
