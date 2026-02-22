@@ -10,3 +10,5 @@
       tags: [postgres, lifecycle]
     - role: authentik
       tags: [authentik, lifecycle]
+    - role: cloudflare_ddns
+      tags: [cloudflare-ddns, lifecycle]

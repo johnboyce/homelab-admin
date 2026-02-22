@@ -1,0 +1,31 @@
+---
+# Cloudflare DDNS Role
+# Keeps Cloudflare DNS A records updated with the host's public IP
+# Reads secrets from /etc/homelab/secrets/cloudflare-ddns.env (root-readable)
+
+- name: Check Cloudflare DDNS secrets file exists
+  stat:
+    path: /etc/homelab/secrets/cloudflare-ddns.env
+  become: yes
+  register: cloudflare_ddns_secrets
+  tags: [cloudflare-ddns, lifecycle]
+
+- name: Fail if secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/cloudflare-ddns.env not found.
+      Create it on geek with:
+        sudo bash -c 'cat > /etc/homelab/secrets/cloudflare-ddns.env << EOF
+        CF_API_TOKEN=your-token-here
+        DOMAINS=johnnyblabs.com,*.johnnyblabs.com,www.johnnyblabs.com
+        EOF'
+  when: not cloudflare_ddns_secrets.stat.exists
+  tags: [cloudflare-ddns, lifecycle]
+
+- name: Ensure Cloudflare DDNS container is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/cloudflare-ddns
+    state: present
+    pull: policy
+  become: yes
+  tags: [cloudflare-ddns, lifecycle]
