@@ -14,3 +14,5 @@
       tags: [cloudflare-ddns, lifecycle]
     - role: pihole
       tags: [pihole, lifecycle]
+    - role: bookstack
+      tags: [bookstack, lifecycle]

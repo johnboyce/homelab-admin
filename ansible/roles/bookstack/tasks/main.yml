@@ -1,0 +1,30 @@
+---
+# BookStack Wiki Role
+# Manages bookstack + bookstack-db containers
+# Secrets from /etc/homelab/secrets/bookstack.env (root-readable)
+
+- name: Check BookStack secrets file exists
+  stat:
+    path: /etc/homelab/secrets/bookstack.env
+  become: yes
+  register: bookstack_secrets
+  tags: [bookstack, lifecycle]
+
+- name: Fail if secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/bookstack.env not found.
+      Copy from platform .env:
+        sudo cp ~/homelab-admin/platform/bookstack/.env /etc/homelab/secrets/bookstack.env
+        sudo chmod 644 /etc/homelab/secrets/bookstack.env
+      Required variables: APP_KEY, DB_PASSWORD, MYSQL_PASSWORD, MYSQL_ROOT_PASSWORD
+  when: not bookstack_secrets.stat.exists
+  tags: [bookstack, lifecycle]
+
+- name: Ensure BookStack stack is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/bookstack
+    state: present
+    pull: policy
+  become: yes
+  tags: [bookstack, lifecycle]
