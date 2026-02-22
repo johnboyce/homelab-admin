@@ -4,6 +4,16 @@
 - name: Converge homelab-admin infrastructure
   hosts: geek
   gather_facts: yes
+  pre_tasks:
+    - name: Sync homelab-admin repo on geek
+      ansible.builtin.git:
+        repo: https://github.com/johnboyce/homelab-admin.git
+        dest: /home/johnb/homelab-admin
+        version: main
+        update: yes
+        force: no
+      become: no
+      tags: always
   roles:
     - role: firewall
       tags: [firewall, bootstrap, config]
