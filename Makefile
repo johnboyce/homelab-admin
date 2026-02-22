@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik deploy-bookstack bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik deploy-bookstack deploy-nginx deploy-pihole bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -23,12 +23,22 @@ nginx-deploy: preflight
 	@echo "== Deploying nginx config to host (normal workflow) =="
 	@bash scripts/nginx_deploy_to_host.sh
 
+deploy-nginx:
+	@echo "== Deploying nginx to geek host =="
+	@ssh johnb@geek 'cd ~/homelab-admin/platform/nginx && docker compose pull && docker compose up -d'
+	@echo "== nginx deployed =="
+
 deploy-bookstack:
 	@echo "== Deploying BookStack to geek host =="
 	@ssh johnb@geek 'cd ~/homelab-admin/platform/bookstack && docker compose pull && docker compose up -d'
 	@echo "== Reloading nginx to flush upstream DNS cache =="
 	@ssh johnb@geek 'docker exec geek-nginx nginx -s reload'
 	@echo "== BookStack deployed =="
+
+deploy-pihole:
+	@echo "== Deploying Pi-hole to geek host =="
+	@ssh johnb@geek 'cd ~/homelab-admin/platform/pihole && docker compose pull && docker compose up -d'
+	@echo "== Pi-hole deployed =="
 
 authentik-inspect:
 	@set -a; [ -f .env.local ] && . ./.env.local; set +a; \
