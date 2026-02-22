@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - /srv/homelab/postgres/pgdata:/var/lib/postgresql/data
     networks:
       - geek-infra
     # No ports exposed to LAN by default (more secure).
