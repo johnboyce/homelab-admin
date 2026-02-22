@@ -12,7 +12,7 @@ services:
       DB_USERNAME: bigbear
       TRUSTED_PROXIES: '*'
     volumes:
-      - /DATA/AppData/big-bear-bookstack/config:/config
+      - /srv/homelab/bookstack/config:/config
     networks:
       - geek-infra
     depends_on:
@@ -28,7 +28,7 @@ services:
       MYSQL_DATABASE: bookstackapp
       MYSQL_USER: bigbear
     volumes:
-      - /DATA/AppData/big-bear-bookstack/mysql:/config
+      - /srv/homelab/bookstack/mysql:/config
     networks:
       - geek-infra
 
