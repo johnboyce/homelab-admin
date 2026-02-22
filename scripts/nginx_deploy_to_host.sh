@@ -108,8 +108,12 @@ if [[ "$IS_MACOS" == "true" ]]; then
     say ""
     say "✅ Configuration test passed"
     say ""
-    read -p "Reload nginx now? [y/N] " -n 1 -r
-    echo
+    if [[ -t 0 ]]; then
+      read -p "Reload nginx now? [y/N] " -n 1 -r
+      echo
+    else
+      REPLY=y
+    fi
     if [[ "${REPLY:-}" =~ ^[Yy]$ ]]; then
       ssh "$GEEK_HOST" "docker exec '$NGINX_CONTAINER' nginx -s reload" || die "Failed to reload nginx"
       say "✅ Nginx reloaded successfully"
@@ -126,8 +130,12 @@ else
     say ""
     say "✅ Configuration test passed"
     say ""
-    read -p "Reload nginx now? [y/N] " -n 1 -r
-    echo
+    if [[ -t 0 ]]; then
+      read -p "Reload nginx now? [y/N] " -n 1 -r
+      echo
+    else
+      REPLY=y
+    fi
     if [[ "${REPLY:-}" =~ ^[Yy]$ ]]; then
       docker exec "$NGINX_CONTAINER" nginx -s reload
       say "✅ Nginx reloaded successfully"
