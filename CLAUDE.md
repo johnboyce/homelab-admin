@@ -258,6 +258,19 @@ Before committing changes to ingress/identity/TLS:
 3. Document both tests and expected HTTP status codes in commit message
 4. Include rollback procedure if applicable
 
+## Known Incidents & Fixes
+
+### PostgreSQL "Permission Denied" after chown (Authentik Server Error)
+**Symptom**: Authentik shows "Server Error"; logs show `FATAL: could not open file "global/pg_filenode.map": Permission denied`
+**Cause**: Running `sudo chown -R <user>:<user> platform/` changes `platform/postgres/pgdata/` ownership away from UID 999 (postgres user inside container)
+**Fix**:
+```bash
+sudo chown -R 999:999 /home/johnb/homelab-admin/platform/postgres/pgdata/
+cd ~/homelab-admin/platform/postgres && docker compose restart
+cd ~/homelab-admin/platform/authentik && docker compose restart
+```
+**Prevention**: Never run `chown -R` on the entire `platform/` tree. Target specific subdirectories and exclude `pgdata/`.
+
 ## Gotchas & Anti-Patterns
 
 - ❌ Do not manually edit `/etc/nginx-docker/` on host unless doing emergency hotfix (use `make nginx-import` afterward)
