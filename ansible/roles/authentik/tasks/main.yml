@@ -1,23 +1,22 @@
 ---
-# Authentik Identity Service Management Role
-# Manages Authentik stack (server, worker, outpost)
-# Phase 5: Lifecycle management (current: stub)
+# Authentik Identity Service Role
+# Manages Authentik stack (server, worker, outpost-proxy)
+# Secrets from /etc/homelab/secrets/authentik.env (root-readable)
 
-- name: Check Authentik compose file exists
+- name: Check Authentik secrets file exists
   stat:
-    path: /home/johnb/homelab-admin/platform/authentik/docker-compose.yml
-  register: authentik_compose
+    path: /etc/homelab/secrets/authentik.env
+  become: yes
+  register: authentik_secrets
   tags: [authentik, lifecycle]
 
-- name: Report Authentik status
-  debug:
+- name: Fail if secrets file is missing
+  fail:
     msg: |
-      Authentik Status:
-      - Compose file: {{ 'exists' if authentik_compose.stat.exists else 'missing' }}
-      - Service: Managed by Ansible (state: present, auto-pull enabled)
-      - Server: https://auth.{{ domains.internal_tld }}
-      - Public: https://auth.{{ domains.public_tld }}
-  when: authentik_compose.stat.exists
+      /etc/homelab/secrets/authentik.env not found.
+      Required variables: AUTHENTIK_SECRET_KEY, AUTHENTIK_POSTGRESQL__PASSWORD,
+                          AUTHENTIK_TOKEN, AUTHENTIK_OUTPOST_TOKEN
+  when: not authentik_secrets.stat.exists
   tags: [authentik, lifecycle]
 
 - name: Ensure Authentik stack is running

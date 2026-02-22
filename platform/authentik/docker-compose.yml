@@ -5,34 +5,30 @@ services:
     command: server
     restart: unless-stopped
     env_file:
-      - .env
+      - /etc/homelab/secrets/authentik.env
     environment:
-      # AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
-      # AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:-}
     volumes:
       - ./media:/media
       - ./custom-templates:/templates
     networks:
       - geek-infra
     ports:
-      - "9000:9000"   # UI/API (we'll proxy with nginx soon)
-      - "9443:9443"   # optional
+      - "9000:9000"
+      - "9443:9443"
 
   worker:
     image: ghcr.io/goauthentik/server:2025.10.4
     container_name: authentik-worker
     restart: unless-stopped
     env_file:
-      - .env
+      - /etc/homelab/secrets/authentik.env
     environment:
-      # AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
       AUTHENTIK_POSTGRESQL__HOST: geek-postgres
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
-      # AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:-}
     volumes:
       - ./media:/media
       - ./custom-templates:/templates
@@ -45,11 +41,11 @@ services:
     container_name: authentik-outpost
     restart: unless-stopped
     env_file:
-      - .env
+      - /etc/homelab/secrets/authentik.env
     environment:
       AUTHENTIK_HOST: http://authentik-server:9000
       AUTHENTIK_HOST_BROWSER: https://auth.johnnyblabs.com
-      AUTHENTIK_TOKEN: ${AUTHENTIK_OUTPOST_TOKEN}
+      # AUTHENTIK_TOKEN comes directly from secrets file
     tmpfs:
       - /dev/shm:rw,size=256m,noexec,nodev,nosuid
     networks:
