@@ -1,0 +1,37 @@
+services:
+  bookstack:
+    image: linuxserver/bookstack:25.12.7
+    container_name: big-bear-bookstack
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_URL: https://bookstack.johnnyblabs.com
+      DB_HOST: big-bear-bookstack-db
+      DB_DATABASE: bookstackapp
+      DB_USERNAME: bigbear
+      TRUSTED_PROXIES: '*'
+    volumes:
+      - /DATA/AppData/big-bear-bookstack/config:/config
+    networks:
+      - geek-infra
+    depends_on:
+      - bookstack-db
+
+  bookstack-db:
+    image: linuxserver/mariadb:10.11.6
+    container_name: big-bear-bookstack-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: bookstackapp
+      MYSQL_USER: bigbear
+    volumes:
+      - /DATA/AppData/big-bear-bookstack/mysql:/config
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true
