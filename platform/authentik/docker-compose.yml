@@ -50,6 +50,8 @@ services:
       AUTHENTIK_HOST: http://authentik-server:9000
       AUTHENTIK_HOST_BROWSER: https://auth.johnnyblabs.com
       AUTHENTIK_TOKEN: ${AUTHENTIK_OUTPOST_TOKEN}
+    tmpfs:
+      - /dev/shm
     networks:
       - geek-infra
 
