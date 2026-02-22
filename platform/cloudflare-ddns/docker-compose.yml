@@ -8,9 +8,9 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    env_file:
+      - /etc/homelab/secrets/cloudflare-ddns.env
     environment:
-      - CF_API_TOKEN=${CF_API_TOKEN}
-      - DOMAINS=${DDNS_DOMAINS}
       - PROXIED=false
       - UPDATE_CRON=@every 5m
       - IP_NETWORKS=all
