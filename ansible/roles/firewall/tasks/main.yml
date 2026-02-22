@@ -50,8 +50,7 @@
   become: yes
   loop:
     - { port: "{{ services.cockpit.port }}", comment: "Cockpit LAN only" }
-    - { port: "{{ services.casaos.port }}", comment: "CasaOS LAN only" }
-    - { port: "{{ services.ollama.api_port }}", comment: "Ollama API LAN only" }
+    - { port: "{{ services.ollama.port }}", comment: "Ollama LAN only" }
     - { port: "{{ services.vnc.port }}", comment: "VNC LAN only" }
   tags: [firewall, config]
 
@@ -82,18 +81,6 @@
     proto: tcp
     comment: "Block VNC from WAN"
   become: yes
-  tags: [firewall, config]
-
-- name: Allow public services (anywhere)
-  community.general.ufw:
-    rule: allow
-    port: "{{ item }}"
-    proto: tcp
-    comment: "Public service"
-  become: yes
-  loop:
-    - "{{ services.custom.port }}"
-    - "{{ services.ollama.inference_port }}"
   tags: [firewall, config]
 
 - name: Enable UFW

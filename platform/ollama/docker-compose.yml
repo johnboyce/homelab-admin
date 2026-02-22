@@ -1,0 +1,15 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: geek-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - /srv/homelab/ollama:/root/.ollama
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true
