@@ -82,15 +82,17 @@ fi
 AUTHZ_FLOW="$(echo "${template_json}" | jq -r '.authorization_flow')"
 INVALID_FLOW="$(echo "${template_json}" | jq -r '.invalidation_flow')"
 AUTHN_FLOW="$(echo "${template_json}" | jq -r '.authentication_flow // empty')"
+PROPERTY_MAPPINGS="$(echo "${template_json}" | jq -c '.property_mappings')"
 
 echo "✅ Template provider found."
-echo "   authorization_flow: ${AUTHZ_FLOW}"
-echo "   invalidation_flow : ${INVALID_FLOW}"
+echo "   authorization_flow : ${AUTHZ_FLOW}"
+echo "   invalidation_flow  : ${INVALID_FLOW}"
 if [[ -n "${AUTHN_FLOW}" ]]; then
   echo "   authentication_flow: ${AUTHN_FLOW}"
 else
   echo "   authentication_flow: <not set on template>"
 fi
+echo "   property_mappings  : ${PROPERTY_MAPPINGS}"
 echo
 
 echo "== 3) Check if BookStack OAuth2 provider already exists =="
@@ -113,6 +115,7 @@ else
       --arg inval "${INVALID_FLOW}" \
       --arg authn "${AUTHN_FLOW}" \
       --arg redirect "${redirect_uri}" \
+      --argjson mappings "${PROPERTY_MAPPINGS}" \
       '{
         name: $name,
         client_type: $client_type,
@@ -120,6 +123,7 @@ else
         invalidation_flow: $inval,
         authentication_flow: $authn,
         redirect_uris: [{matching_mode:"strict", url:$redirect}],
+        property_mappings: $mappings,
         include_claims_in_id_token: true,
         issuer_mode: "per_provider",
         sub_mode: "hashed_user_id"
@@ -131,12 +135,14 @@ else
       --arg authz "${AUTHZ_FLOW}" \
       --arg inval "${INVALID_FLOW}" \
       --arg redirect "${redirect_uri}" \
+      --argjson mappings "${PROPERTY_MAPPINGS}" \
       '{
         name: $name,
         client_type: $client_type,
         authorization_flow: $authz,
         invalidation_flow: $inval,
         redirect_uris: [{matching_mode:"strict", url:$redirect}],
+        property_mappings: $mappings,
         include_claims_in_id_token: true,
         issuer_mode: "per_provider",
         sub_mode: "hashed_user_id"
