@@ -69,13 +69,15 @@
   tags: [nginx, config]
 
 - name: Update nginx managed state fact
-  copy:
-    dest: /etc/ansible/facts.d/homelab.fact
-    content: |
-      [managed]
-      firewall=true
-      nginx=true
-      nginx_managed_since={{ ansible_date_time.iso8601 }}
+  community.general.ini_file:
+    path: /etc/ansible/facts.d/homelab.fact
+    section: managed
+    option: "{{ item.key }}"
+    value: "{{ item.value }}"
     mode: '0644'
+    create: yes
   become: yes
+  loop:
+    - { key: nginx, value: "true" }
+    - { key: nginx_managed_since, value: "{{ ansible_date_time.iso8601 }}" }
   tags: [nginx, config]
