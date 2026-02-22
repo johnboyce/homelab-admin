@@ -27,3 +27,5 @@
       tags: [authentik, lifecycle]
     - role: cloudflare_ddns
       tags: [cloudflare-ddns, lifecycle]
+    - role: pihole
+      tags: [pihole, lifecycle]

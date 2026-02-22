@@ -1,0 +1,41 @@
+---
+# Pi-hole DNS Role
+# Manages geek-pihole container (LAN DNS + ad blocking)
+# Secrets from /etc/homelab/secrets/pihole.env (root-readable)
+
+- name: Check Pi-hole secrets file exists
+  stat:
+    path: /etc/homelab/secrets/pihole.env
+  become: yes
+  register: pihole_secrets
+  tags: [pihole, lifecycle]
+
+- name: Fail if secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/pihole.env not found.
+      Create it on geek with the required variables:
+        WEBPASSWORD, TZ, FTLCONF_LOCAL_IPV4, DNSMASQ_LISTENING
+  when: not pihole_secrets.stat.exists
+  tags: [pihole, lifecycle]
+
+- name: Ensure Pi-hole data directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  loop:
+    - /srv/homelab/pihole/etc-pihole
+    - /srv/homelab/pihole/etc-dnsmasq.d
+  tags: [pihole, lifecycle]
+
+- name: Ensure Pi-hole container is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/pihole
+    state: present
+    pull: policy
+  become: yes
+  tags: [pihole, lifecycle]

@@ -5,7 +5,7 @@ services:
     hostname: pihole
     restart: unless-stopped
     env_file:
-      - .env
+      - /etc/homelab/secrets/pihole.env
     # DNS exposed to LAN; admin UI on loopback only (access via SSH tunnel or nginx)
     ports:
       - "53:53/tcp"
