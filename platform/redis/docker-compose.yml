@@ -14,4 +14,4 @@ services:
 
 networks:
   geek-infra:
-    name: geek-infra
+    external: true
