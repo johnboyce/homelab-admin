@@ -1,0 +1,22 @@
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: geek-pihole
+    hostname: pihole
+    restart: unless-stopped
+    env_file:
+      - .env
+    # DNS exposed to LAN; admin UI on loopback only (access via SSH tunnel or nginx)
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "127.0.0.1:8081:80/tcp"
+    networks:
+      - geek-infra
+    volumes:
+      - /srv/homelab/pihole/etc-pihole:/etc/pihole
+      - /srv/homelab/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+
+networks:
+  geek-infra:
+    external: true
