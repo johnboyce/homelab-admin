@@ -11,8 +11,8 @@ services:
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
     volumes:
-      - ./media:/media
-      - ./custom-templates:/templates
+      - /srv/homelab/authentik/media:/media
+      - /srv/homelab/authentik/custom-templates:/templates
     networks:
       - geek-infra
     ports:
@@ -30,8 +30,8 @@ services:
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
     volumes:
-      - ./media:/media
-      - ./custom-templates:/templates
+      - /srv/homelab/authentik/media:/media
+      - /srv/homelab/authentik/custom-templates:/templates
     command: worker
     networks:
       - geek-infra
