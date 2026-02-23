@@ -1,6 +1,6 @@
 services:
   plane:
-    image: ghcr.io/makeplane/plane:latest
+    image: plane/plane:latest
     container_name: plane
     restart: unless-stopped
     env_file:
