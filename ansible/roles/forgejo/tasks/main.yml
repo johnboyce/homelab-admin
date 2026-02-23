@@ -49,7 +49,7 @@
     status_code: [200, 302]
   register: forgejo_result
   until: forgejo_result.status in [200, 302]
-  retries: 30
+  retries: 1
   delay: 5
   ignore_errors: yes
   tags: [forgejo, lifecycle]
