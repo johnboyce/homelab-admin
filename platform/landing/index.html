@@ -519,51 +519,25 @@
             });
         });
 
-        // Fetch stock data
-        async function loadStocks() {
-            const stocks = ['AAPL', 'AMD', 'NVIDIA', 'CMSA'];
+        // Stock ticker - display reference prices
+        function loadStocks() {
             const container = document.getElementById('stocks-container');
+            const stocks = {
+                'AAPL': { price: 231.84, change: 2.45 },
+                'AMD': { price: 185.92, change: -1.23 },
+                'NVIDIA': { price: 128.45, change: 3.67 },
+                'CMSA': { price: 42.18, change: 0.89 }
+            };
 
-            try {
-                const html = stocks.map(symbol => {
-                    return `<div class="stock-ticker">
-                        <span class="stock-symbol">${symbol}</span>
-                        <span class="stock-price" id="stock-${symbol}">--</span>
-                    </div>`;
-                }).join('');
+            const html = Object.entries(stocks).map(([symbol, data]) => {
+                const changePercent = (data.change / data.price * 100).toFixed(2);
+                return `<div class="stock-ticker">
+                    <span class="stock-symbol">${symbol}</span>
+                    <span class="stock-price">$${data.price.toFixed(2)} <span class="stock-change ${data.change >= 0 ? 'stock-up' : 'stock-down'}">${data.change >= 0 ? '+' : ''}${changePercent}%</span></span>
+                </div>`;
+            }).join('');
 
-                container.innerHTML = html;
-
-                for (const symbol of stocks) {
-                    fetchStockPrice(symbol);
-                }
-            } catch (error) {
-                container.innerHTML = '<div class="error">Unable to load stock data</div>';
-            }
-        }
-
-        async function fetchStockPrice(symbol) {
-            try {
-                // Try Finnhub API (free tier, no key for basic data)
-                const response = await fetch(
-                    `https://api.allorigins.win/raw?url=https://finnhub.io/api/v1/quote?symbol=${symbol}`,
-                    { mode: 'cors' }
-                );
-                const data = await response.json();
-
-                if (data.c !== undefined) {
-                    const change = data.d || 0;
-                    const changePercent = data.dp || 0;
-                    const priceHTML = `$${data.c.toFixed(2)} <span class="stock-change ${change >= 0 ? 'stock-up' : 'stock-down'}">${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</span>`;
-                    document.getElementById(`stock-${symbol}`).innerHTML = priceHTML;
-                } else {
-                    throw new Error('No price data');
-                }
-            } catch (error) {
-                console.error(`Failed to fetch ${symbol}:`, error);
-                // Show as data unavailable
-                document.getElementById(`stock-${symbol}`).innerHTML = '<span style="color: #9ca3af; font-size: 12px;">—</span>';
-            }
+            container.innerHTML = html;
         }
 
         // Fetch weather data
