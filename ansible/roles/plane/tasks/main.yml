@@ -21,11 +21,16 @@
   when: not plane_secrets.stat.exists
   tags: [plane, lifecycle]
 
-- name: Load Plane secrets
-  include_vars:
-    file: /etc/homelab/secrets/plane.env
-    name: plane_env
+- name: Get PostgreSQL password from secrets file
+  shell: grep POSTGRES_PASSWORD /etc/homelab/secrets/postgres.env | cut -d= -f2
   become: yes
+  register: postgres_password
+  tags: [plane, lifecycle]
+
+- name: Get Plane DB password from secrets file
+  shell: grep PLANE_DB_PASSWORD /etc/homelab/secrets/plane.env | cut -d= -f2
+  become: yes
+  register: plane_db_password
   tags: [plane, lifecycle]
 
 - name: Create Plane database in PostgreSQL
@@ -34,19 +39,19 @@
     state: present
     login_host: localhost
     login_user: postgres
-    login_password: "{{ lookup('file', '/etc/homelab/secrets/postgres.env') | regex_search('POSTGRES_PASSWORD=(.+)', '\\1') | first }}"
+    login_password: "{{ postgres_password.stdout }}"
   become: yes
   tags: [plane, lifecycle]
 
 - name: Create Plane PostgreSQL user
   community.postgresql.postgresql_user:
     name: plane
-    password: "{{ plane_env.PLANE_DB_PASSWORD }}"
+    password: "{{ plane_db_password.stdout }}"
     db: plane
     state: present
     login_host: localhost
     login_user: postgres
-    login_password: "{{ lookup('file', '/etc/homelab/secrets/postgres.env') | regex_search('POSTGRES_PASSWORD=(.+)', '\\1') | first }}"
+    login_password: "{{ postgres_password.stdout }}"
   become: yes
   tags: [plane, lifecycle]
 
@@ -59,7 +64,7 @@
     role: plane
     login_host: localhost
     login_user: postgres
-    login_password: "{{ lookup('file', '/etc/homelab/secrets/postgres.env') | regex_search('POSTGRES_PASSWORD=(.+)', '\\1') | first }}"
+    login_password: "{{ postgres_password.stdout }}"
   become: yes
   tags: [plane, lifecycle]
 
