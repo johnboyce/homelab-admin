@@ -18,11 +18,11 @@ UFW provides a simple interface to manage iptables rules on Ubuntu. The geek hos
 - **HTTPS (443/tcp)** — ALLOW via Nginx Full (TLS termination)
 
 ### Local Network Only (LAN: 192.168.1.0/24)
-- **Port 8081/tcp** — Ollama API (LAN only)
 - **Port 53/tcp + 53/udp** — Pi-hole DNS (LAN only)
+- **Port 222/tcp** — Forgejo SSH (LAN only; Docker port map 222→2222)
 - **Port 9090/tcp** — Cockpit (system admin UI, LAN only)
+- **Port 11434/tcp** — Ollama inference API (LAN only)
 - **Port 5901/tcp** — VNC (remote desktop, LAN only)
-- **Port 8888/tcp** — CasaOS (host dashboard, LAN only)
 
 ### Other Services
 - **Port 7777** — ALLOW (custom service, accessible from anywhere)

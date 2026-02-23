@@ -32,6 +32,17 @@
     - /srv/homelab/pihole/etc-dnsmasq.d
   tags: [pihole, lifecycle]
 
+- name: Deploy homelab internal DNS config (dnsmasq)
+  copy:
+    src: "{{ playbook_dir | dirname | dirname }}/platform/pihole/etc-dnsmasq.d/05-geek-local.conf"
+    dest: /srv/homelab/pihole/etc-dnsmasq.d/05-geek-local.conf
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  notify: Restart Pi-hole DNS
+  tags: [pihole, dns]
+
 - name: Ensure Pi-hole container is running
   community.docker.docker_compose_v2:
     project_src: /home/johnb/homelab-admin/platform/pihole

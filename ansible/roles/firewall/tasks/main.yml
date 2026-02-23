@@ -52,6 +52,7 @@
     - { port: "{{ services.cockpit.port }}", comment: "Cockpit LAN only" }
     - { port: "{{ services.ollama.port }}", comment: "Ollama LAN only" }
     - { port: "{{ services.vnc.port }}", comment: "VNC LAN only" }
+    - { port: "{{ services.forgejo.ssh_port }}", proto: tcp, comment: "Forgejo SSH LAN only" }
   tags: [firewall, config]
 
 - name: Allow Pi-hole DNS (TCP + UDP from LAN)

@@ -1,0 +1,6 @@
+---
+# Pi-hole handlers
+
+- name: Restart Pi-hole DNS
+  shell: docker exec geek-pihole pihole reloaddns
+  listen: "Restart Pi-hole DNS"
