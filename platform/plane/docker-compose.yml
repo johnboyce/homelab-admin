@@ -1,23 +1,35 @@
 services:
-  plane:
-    image: plane/plane:latest
-    container_name: plane
+  plane-backend:
+    image: makeplane/plane-backend:latest
+    container_name: plane-backend
     restart: unless-stopped
     env_file:
       - /etc/homelab/secrets/plane.env
     environment:
-      # Plane will read PLANE_DB_PASSWORD and PLANE_SECRET_KEY from env_file
-      # Set additional configuration here:
-      CORS_ALLOWED_ORIGINS: "http://plane.geek,https://plane.johnnyblabs.com"
       DEBUG: "False"
-      # For multi-db setup, Plane uses DB_ENGINE, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
-      # Or can use DATABASE_URL if properly set in env_file
+      DATABASE_URL: postgresql://plane:${PLANE_DB_PASSWORD}@geek-postgres:5432/plane
+      SECRET_KEY: ${PLANE_SECRET_KEY}
+      ALLOWED_HOSTS: "*"
     volumes:
       - /srv/homelab/plane/data:/app/plane/data
     networks:
       - geek-infra
     expose:
       - "8000"
+
+  plane-frontend:
+    image: makeplane/plane-frontend:latest
+    container_name: plane-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://plane-backend:8000/
+      NEXT_PUBLIC_DEPLOY_WITH_DOCKER: "1"
+    networks:
+      - geek-infra
+    expose:
+      - "3000"
+    depends_on:
+      - plane-backend
 
 networks:
   geek-infra:
