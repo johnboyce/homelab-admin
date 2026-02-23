@@ -1,6 +1,6 @@
 ---
 # Plane Project Management Role
-# Manages Plane container with shared PostgreSQL database
+# Manages Plane stack with shared PostgreSQL, Redis, frontend
 # Secrets from /etc/homelab/secrets/plane.env (root-readable)
 
 - name: Check Plane secrets file exists
@@ -23,7 +23,6 @@
 
 - name: Verify Plane database and user exist
   shell: |
-    # Check if database exists
     docker exec geek-postgres psql -U postgres -lqt | cut -d \| -f 1 | grep -qw plane || {
       PGPASSWORD=$(grep POSTGRES_PASSWORD /etc/homelab/secrets/postgres.env | cut -d= -f2)
       export PGPASSWORD
@@ -34,30 +33,33 @@
   become: yes
   tags: [plane, lifecycle]
 
-- name: Create Plane data directory
+- name: Create Plane data directories
   file:
-    path: /srv/homelab/plane/data
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: '0755'
   become: yes
+  loop:
+    - /srv/homelab/plane/data
+    - /srv/homelab/plane/redis
   tags: [plane, lifecycle]
 
 - name: Ensure Plane stack is running
   community.docker.docker_compose_v2:
     project_src: /home/johnb/homelab-admin/platform/plane
     state: present
-    pull: policy
+    pull: always
   become: yes
   tags: [plane, lifecycle]
 
-- name: Wait for Plane to be ready
+- name: Wait for Plane API to be ready
   uri:
     url: http://localhost:8000/
     status_code: 200
-  register: plane_result
-  until: plane_result.status == 200
-  retries: 10
+  register: plane_api_result
+  until: plane_api_result.status == 200
+  retries: 30
   delay: 2
   tags: [plane, lifecycle]

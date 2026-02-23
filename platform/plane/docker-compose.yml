@@ -1,35 +1,55 @@
 services:
-  plane-backend:
+  # Plane Backend API
+  plane-api:
     image: makeplane/plane-backend:latest
-    container_name: plane-backend
+    container_name: plane-api
     restart: unless-stopped
+    command: gunicorn -w 1 -b 0.0.0.0:8000 plane.wsgi
     env_file:
       - /etc/homelab/secrets/plane.env
     environment:
       DEBUG: "False"
+      DJANGO_SETTINGS_MODULE: plane.settings.production
       DATABASE_URL: postgresql://plane:${PLANE_DB_PASSWORD}@geek-postgres:5432/plane
       SECRET_KEY: ${PLANE_SECRET_KEY}
-      ALLOWED_HOSTS: "*"
+      REDIS_URL: redis://plane-redis:6379/
+      ALLOWED_HOSTS: "plane.geek,plane.johnnyblabs.com,localhost"
+      CORS_ALLOWED_ORIGINS: "http://plane.geek,https://plane.johnnyblabs.com,http://localhost:3000"
     volumes:
-      - /srv/homelab/plane/data:/app/plane/data
+      - /srv/homelab/plane/data:/app/data
     networks:
       - geek-infra
     expose:
       - "8000"
+    depends_on:
+      - plane-redis
 
+  # Plane Frontend
   plane-frontend:
     image: makeplane/plane-frontend:latest
     container_name: plane-frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://plane-backend:8000/
-      NEXT_PUBLIC_DEPLOY_WITH_DOCKER: "1"
+      NEXT_PUBLIC_API_BASE_URL: http://plane-api:8000
+      NEXT_PUBLIC_DEPLOYMENT_TYPE: docker
     networks:
       - geek-infra
     expose:
       - "3000"
     depends_on:
-      - plane-backend
+      - plane-api
+
+  # Redis Cache
+  plane-redis:
+    image: redis:7-alpine
+    container_name: plane-redis
+    restart: unless-stopped
+    volumes:
+      - /srv/homelab/plane/redis:/data
+    networks:
+      - geek-infra
+    expose:
+      - "6379"
 
 networks:
   geek-infra:
