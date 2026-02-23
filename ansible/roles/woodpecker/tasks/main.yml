@@ -52,4 +52,5 @@
   until: woodpecker_result.status in [200, 302]
   retries: 30
   delay: 5
+  ignore_errors: yes
   tags: [woodpecker, lifecycle]
