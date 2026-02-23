@@ -41,11 +41,12 @@
 
 - name: Wait for Plane to be ready
   uri:
-    url: http://plane-app-proxy-1:80/
+    url: http://localhost:3100/
     status_code: [200, 302]
   register: plane_result
   until: plane_result.status in [200, 302]
   retries: 30
   delay: 5
   delegate_to: "{{ inventory_hostname }}"
+  become: yes
   tags: [plane, lifecycle]
