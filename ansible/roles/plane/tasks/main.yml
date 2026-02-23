@@ -1,65 +1,49 @@
 ---
 # Plane Project Management Role
-# Manages Plane stack with shared PostgreSQL, Redis, frontend
-# Secrets from /etc/homelab/secrets/plane.env (root-readable)
+# Uses official Plane community deployment at /srv/homelab/plane-official/
+# Plane runs its own PostgreSQL, Redis, RabbitMQ, and MinIO (self-contained stack)
+# Config: /srv/homelab/plane-official/deployments/cli/community/plane-app/plane.env
+# Access: http://plane.geek (via nginx proxy to plane-app-proxy-1:80)
 
-- name: Check Plane secrets file exists
+- name: Check Plane deployment directory exists
   stat:
-    path: /etc/homelab/secrets/plane.env
+    path: /srv/homelab/plane-official/deployments/cli/community/plane-app
   become: yes
-  register: plane_secrets
+  register: plane_deploy_dir
   tags: [plane, lifecycle]
 
-- name: Fail if secrets file is missing
+- name: Fail if Plane is not installed
   fail:
     msg: |
-      /etc/homelab/secrets/plane.env not found.
-      Copy from platform .env:
-        sudo cp ~/homelab-admin/platform/plane/.env.example /etc/homelab/secrets/plane.env
-        sudo chmod 644 /etc/homelab/secrets/plane.env
-      Required variables: PLANE_SECRET_KEY, PLANE_DB_PASSWORD
-  when: not plane_secrets.stat.exists
-  tags: [plane, lifecycle]
-
-- name: Verify Plane database and user exist
-  shell: |
-    docker exec geek-postgres psql -U postgres -lqt | cut -d \| -f 1 | grep -qw plane || {
-      PGPASSWORD=$(grep POSTGRES_PASSWORD /etc/homelab/secrets/postgres.env | cut -d= -f2)
-      export PGPASSWORD
-      docker exec geek-postgres psql -U postgres -c "CREATE DATABASE plane;"
-      docker exec geek-postgres psql -U postgres -c "CREATE USER plane WITH PASSWORD '$(grep PLANE_DB_PASSWORD /etc/homelab/secrets/plane.env | cut -d= -f2)';"
-      docker exec geek-postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE plane TO plane;"
-    }
-  become: yes
-  tags: [plane, lifecycle]
-
-- name: Create Plane data directories
-  file:
-    path: "{{ item }}"
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-  become: yes
-  loop:
-    - /srv/homelab/plane/data
-    - /srv/homelab/plane/redis
+      Plane official deployment not found at /srv/homelab/plane-official/
+      Install using the official script:
+        cd /srv/homelab && git clone https://github.com/makeplane/plane.git plane-official
+        cd plane-official/deployments/cli/community && ./install.sh
+      Then update plane.env with APP_DOMAIN=plane.geek
+  when: not plane_deploy_dir.stat.exists
   tags: [plane, lifecycle]
 
 - name: Ensure Plane stack is running
   community.docker.docker_compose_v2:
-    project_src: /home/johnb/homelab-admin/platform/plane
+    project_src: /srv/homelab/plane-official/deployments/cli/community/plane-app
     state: present
-    pull: always
   become: yes
   tags: [plane, lifecycle]
 
-- name: Wait for Plane API to be ready
+- name: Ensure Plane proxy is connected to geek-infra network
+  shell: |
+    docker network connect geek-infra plane-app-proxy-1 2>/dev/null || true
+  become: yes
+  changed_when: false
+  tags: [plane, lifecycle]
+
+- name: Wait for Plane to be ready
   uri:
-    url: http://localhost:8000/
-    status_code: 200
-  register: plane_api_result
-  until: plane_api_result.status == 200
+    url: http://plane-app-proxy-1:80/
+    status_code: [200, 302]
+  register: plane_result
+  until: plane_result.status in [200, 302]
   retries: 30
-  delay: 2
+  delay: 5
+  delegate_to: "{{ inventory_hostname }}"
   tags: [plane, lifecycle]

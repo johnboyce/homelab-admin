@@ -335,6 +335,108 @@
         .service-plane { --badge-bg: #ddd6fe; --badge-color: #5b21b6; }
         .service-admin { --badge-bg: #fed7aa; --badge-color: #92400e; }
 
+        /* Plane widget */
+        .plane-widget-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .plane-link-card {
+            display: block;
+            padding: 10px 12px;
+            background: #f5f3ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #5b21b6;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.15s;
+        }
+
+        .plane-link-card:hover {
+            background: #ede9fe;
+        }
+
+        .plane-link-card .plane-link-label {
+            display: block;
+            color: #7c3aed;
+            font-size: 11px;
+            font-weight: 400;
+            margin-bottom: 2px;
+        }
+
+        .plane-issues-list {
+            margin-top: 12px;
+            font-size: 12px;
+        }
+
+        .plane-issue-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+            text-decoration: none;
+        }
+
+        .plane-issue-item:last-child { border-bottom: none; }
+
+        .plane-issue-item:hover .plane-issue-title { color: #5b21b6; }
+
+        .plane-issue-id {
+            font-size: 10px;
+            color: #9ca3af;
+            white-space: nowrap;
+            margin-top: 1px;
+            min-width: 56px;
+        }
+
+        .plane-issue-title {
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .plane-issue-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        .status-in-progress { background: #fef3c7; color: #92400e; }
+        .status-todo { background: #f3f4f6; color: #6b7280; }
+
+        .plane-loading {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 12px;
+            padding: 8px 0;
+        }
+
+        .lan-only-badge {
+            font-size: 10px;
+            color: #9ca3af;
+            background: #f3f4f6;
+            border-radius: 3px;
+            padding: 1px 5px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        .context-banner {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .context-lan { background: #ecfdf5; color: #047857; }
+        .context-wan { background: #eff6ff; color: #1d4ed8; }
+
         @media (max-width: 768px) {
             .menu-toggle {
                 display: block;
@@ -400,6 +502,7 @@
                         <span class="status-dot"></span>
                         Operational
                     </span>
+                    <span id="context-badge" class="context-banner"></span>
                 </div>
             </div>
         </div>
@@ -407,65 +510,7 @@
 
     <div class="main-wrapper">
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-header">Core Services</div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="https://auth.johnnyblabs.com" class="service-authentik">
-                            <span class="sidebar-badge">🔐</span>
-                            <span>Authentik</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="https://bookstack.johnnyblabs.com" class="service-bookstack">
-                            <span class="sidebar-badge">📚</span>
-                            <span>BookStack</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="http://192.168.1.187:3100" class="service-plane">
-                            <span class="sidebar-badge">✈</span>
-                            <span>Plane</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-header">Network</div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="https://pihole.johnnyblabs.com" class="service-pihole">
-                            <span class="sidebar-badge">🛡️</span>
-                            <span>Pi-hole</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-header">AI & Models</div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="https://ollama.johnnyblabs.com" class="service-ollama">
-                            <span class="sidebar-badge">🤖</span>
-                            <span>Ollama</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-header">Admin</div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="https://auth.johnnyblabs.com/if/admin/" class="service-admin">
-                            <span class="sidebar-badge">⚙️</span>
-                            <span>Admin Panel</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Rendered by buildSidebar() based on LAN/WAN context -->
         </aside>
 
         <main class="main-content">
@@ -499,6 +544,24 @@
                             <div class="loading">Loading news...</div>
                         </div>
                     </div>
+
+                    <!-- Plane Widget (LAN only — hidden on WAN by JS) -->
+                    <div class="widget" id="plane-widget">
+                        <h3>✈ Plane — Homelab</h3>
+                        <div class="plane-widget-links">
+                            <a href="http://plane.geek/homelab/" class="plane-link-card">
+                                <span class="plane-link-label">Workspace</span>
+                                Homelab
+                            </a>
+                            <a href="http://plane.geek/homelab/projects/3a112e11-521f-459e-8ac9-f7bb6259cbd8/issues/" class="plane-link-card">
+                                <span class="plane-link-label">Project</span>
+                                Infrastructure
+                            </a>
+                        </div>
+                        <div id="plane-issues-container">
+                            <div class="plane-loading">Loading open issues...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -511,7 +574,95 @@
     </div>
 
     <script>
-        // Toggle sidebar on mobile
+        // ── Context detection ──────────────────────────────────────────────
+        // LAN: served from geek, *.geek, or 192.168.x.x
+        // WAN: anything else (landing.johnnyblabs.com, etc.)
+        const IS_LAN = (() => {
+            const h = window.location.hostname;
+            return h === 'geek' || h.endsWith('.geek') || /^192\.168\./.test(h) || h === 'localhost';
+        })();
+
+        // ── Service definitions ────────────────────────────────────────────
+        // lan: null means LAN-only (hidden on WAN); wan: null means no public URL
+        const SERVICES = {
+            'Core Services': [
+                { label: 'Authentik',  icon: '🔐', cls: 'service-authentik',
+                  lan: 'http://auth.geek',               wan: 'https://auth.johnnyblabs.com' },
+                { label: 'BookStack',  icon: '📚', cls: 'service-bookstack',
+                  lan: 'http://bookstack.geek',           wan: 'https://bookstack.johnnyblabs.com' },
+                { label: 'Plane',      icon: '✈',  cls: 'service-plane',
+                  lan: 'http://plane.geek',               wan: null },
+            ],
+            'Network': [
+                { label: 'Pi-hole',    icon: '🛡️', cls: 'service-pihole',
+                  lan: 'http://pihole.geek/admin',        wan: null },
+            ],
+            'AI & Models': [
+                { label: 'Ollama',     icon: '🤖', cls: 'service-ollama',
+                  lan: 'http://ollama.geek',              wan: null },
+            ],
+            'Admin': [
+                { label: 'Admin Panel', icon: '⚙️', cls: 'service-admin',
+                  lan: 'http://auth.geek/if/admin/',      wan: 'https://auth.johnnyblabs.com/if/admin/' },
+            ],
+        };
+
+        function buildSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            let html = '';
+
+            for (const [section, items] of Object.entries(SERVICES)) {
+                const visible = items.filter(s => IS_LAN ? s.lan : s.wan);
+                if (visible.length === 0) continue;
+
+                const rows = visible.map(s => {
+                    const url  = IS_LAN ? s.lan : s.wan;
+                    const badge = (!IS_LAN && !s.wan)
+                        ? '' // filtered out above
+                        : '';
+                    return `<li>
+                        <a href="${url}" class="${s.cls}">
+                            <span class="sidebar-badge">${s.icon}</span>
+                            <span>${s.label}</span>
+                        </a>
+                    </li>`;
+                }).join('');
+
+                // Show LAN-only items in WAN view as greyed-out hint
+                const lanOnly = !IS_LAN ? items.filter(s => !s.wan).map(s => `
+                    <li style="opacity:0.4;cursor:default">
+                        <span class="${s.cls}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;color:#9ca3af">
+                            <span class="sidebar-badge">${s.icon}</span>
+                            <span>${s.label} <span class="lan-only-badge">LAN</span></span>
+                        </span>
+                    </li>`).join('') : '';
+
+                html += `<div class="sidebar-section">
+                    <div class="sidebar-header">${section}</div>
+                    <ul class="sidebar-menu">${rows}${lanOnly}</ul>
+                </div>`;
+            }
+
+            sidebar.innerHTML = html;
+
+            // Re-bind close-on-click for mobile
+            sidebar.querySelectorAll('a').forEach(a =>
+                a.addEventListener('click', () => sidebar.classList.remove('open'))
+            );
+        }
+
+        function setBadge() {
+            const badge = document.getElementById('context-badge');
+            if (IS_LAN) {
+                badge.textContent = '🏠 LAN';
+                badge.className = 'context-banner context-lan';
+            } else {
+                badge.textContent = '🌐 Remote';
+                badge.className = 'context-banner context-wan';
+            }
+        }
+
+        // ── Sidebar toggle (mobile) ────────────────────────────────────────
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
 
@@ -526,25 +677,91 @@
             });
         });
 
-        // Stock ticker - display reference prices
-        function loadStocks() {
+        // Stock ticker — live prices via Yahoo Finance (no key needed)
+        async function loadStocks() {
             const container = document.getElementById('stocks-container');
-            const stocks = {
-                'AAPL': { price: 231.84, change: 2.45 },
-                'AMD': { price: 185.92, change: -1.23 },
-                'NVIDIA': { price: 128.45, change: 3.67 },
-                'CMSA': { price: 42.18, change: 0.89 }
-            };
+            const symbols = ['AAPL', 'AMD', 'NVDA', 'CMCSA'];
 
-            const html = Object.entries(stocks).map(([symbol, data]) => {
-                const changePercent = (data.change / data.price * 100).toFixed(2);
-                return `<div class="stock-ticker">
-                    <span class="stock-symbol">${symbol}</span>
-                    <span class="stock-price">$${data.price.toFixed(2)} <span class="stock-change ${data.change >= 0 ? 'stock-up' : 'stock-down'}">${data.change >= 0 ? '+' : ''}${changePercent}%</span></span>
-                </div>`;
-            }).join('');
+            try {
+                const results = await Promise.all(symbols.map(async sym => {
+                    const r = await fetch(
+                        `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`,
+                        { headers: { 'Accept': 'application/json' } }
+                    );
+                    const d = await r.json();
+                    const meta = d.chart.result[0].meta;
+                    const price = meta.regularMarketPrice;
+                    const prev = meta.chartPreviousClose;
+                    const change = price - prev;
+                    const changePct = (change / prev * 100).toFixed(2);
+                    return { sym, price, change, changePct };
+                }));
 
-            container.innerHTML = html;
+                container.innerHTML = results.map(({ sym, price, change, changePct }) => `
+                    <div class="stock-ticker">
+                        <span class="stock-symbol">${sym}</span>
+                        <span class="stock-price">$${price.toFixed(2)}
+                            <span class="stock-change ${change >= 0 ? 'stock-up' : 'stock-down'}">
+                                ${change >= 0 ? '+' : ''}${changePct}%
+                            </span>
+                        </span>
+                    </div>`).join('');
+            } catch (e) {
+                // Fallback to static if CORS blocks
+                container.innerHTML = `
+                    <div class="stock-ticker"><span class="stock-symbol">AAPL</span><span class="stock-price" style="color:#9ca3af">unavailable</span></div>
+                    <div class="stock-ticker"><span class="stock-symbol">AMD</span><span class="stock-price" style="color:#9ca3af">unavailable</span></div>
+                    <div class="stock-ticker"><span class="stock-symbol">NVDA</span><span class="stock-price" style="color:#9ca3af">unavailable</span></div>
+                    <div class="stock-ticker"><span class="stock-symbol">CMCSA</span><span class="stock-price" style="color:#9ca3af">unavailable</span></div>
+                    <div style="font-size:11px;color:#9ca3af;margin-top:8px">Open market hours for live data</div>`;
+            }
+        }
+
+        // Plane open issues widget (LAN only)
+        async function loadPlaneIssues() {
+            const container = document.getElementById('plane-issues-container');
+            if (!container) return;
+
+            if (!IS_LAN) {
+                container.innerHTML = '<div class="plane-loading">Available on LAN only</div>';
+                return;
+            }
+
+            const workspace = 'homelab';
+            const project = '3a112e11-521f-459e-8ac9-f7bb6259cbd8';
+
+            try {
+                const r = await fetch(
+                    `http://plane.geek/api/workspaces/${workspace}/projects/${project}/issues/?state_group=started,unstarted&per_page=6`,
+                    { credentials: 'include' }
+                );
+
+                if (!r.ok) {
+                    container.innerHTML = '<div class="plane-loading"><a href="http://plane.geek" style="color:#7c3aed">Sign in to Plane</a> to see open issues</div>';
+                    return;
+                }
+
+                const data = await r.json();
+                const issues = (data.results || []).slice(0, 6);
+
+                if (issues.length === 0) {
+                    container.innerHTML = '<div class="plane-loading">No open issues 🎉</div>';
+                    return;
+                }
+
+                container.innerHTML = '<div class="plane-issues-list">' + issues.map(issue => {
+                    const isInProgress = issue.state_detail?.group === 'started';
+                    const statusClass = isInProgress ? 'status-in-progress' : 'status-todo';
+                    const statusLabel = isInProgress ? 'In Progress' : 'Todo';
+                    return `<a class="plane-issue-item" href="http://plane.geek/${workspace}/projects/${project}/issues/${issue.id}/" target="_blank">
+                        <span class="plane-issue-id">INFRA-${issue.sequence_id}</span>
+                        <span class="plane-issue-title">${issue.name}</span>
+                        <span class="plane-issue-status ${statusClass}">${statusLabel}</span>
+                    </a>`;
+                }).join('') + '</div>';
+            } catch (e) {
+                container.innerHTML = '<div class="plane-loading">Could not reach Plane</div>';
+            }
         }
 
         // Fetch weather data
@@ -636,9 +853,19 @@
 
         // Load widgets on page load
         document.addEventListener('DOMContentLoaded', () => {
+            buildSidebar();
+            setBadge();
+
+            // Hide Plane widget on WAN
+            if (!IS_LAN) {
+                const pw = document.getElementById('plane-widget');
+                if (pw) pw.style.display = 'none';
+            }
+
             loadStocks();
             loadWeather();
             loadNews();
+            loadPlaneIssues();
         });
     </script>
 </body>
