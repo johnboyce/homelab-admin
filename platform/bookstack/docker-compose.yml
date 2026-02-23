@@ -6,7 +6,9 @@ services:
     env_file:
       - /etc/homelab/secrets/bookstack.env
     environment:
-      APP_URL: https://bookstack.johnnyblabs.com
+      # Allow access from both internal (.geek) and public (.johnnyblabs.com) domains
+      # APP_URL set to internal domain; nginx handles routing from public domain
+      APP_URL: http://bookstack.geek
       DB_HOST: bookstack-db
       DB_DATABASE: bookstackapp
       DB_USERNAME: bigbear
