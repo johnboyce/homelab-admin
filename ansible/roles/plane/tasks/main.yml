@@ -26,6 +26,8 @@
 - name: Ensure Plane stack is running
   community.docker.docker_compose_v2:
     project_src: /srv/homelab/plane-official/deployments/cli/community/plane-app
+    env_files:
+      - /srv/homelab/plane-official/deployments/cli/community/plane-app/plane.env
     state: present
   become: yes
   tags: [plane, lifecycle]
