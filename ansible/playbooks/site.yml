@@ -25,6 +25,8 @@
       tags: [landing, lifecycle]
     - role: postgres
       tags: [postgres, lifecycle]
+    - role: plane
+      tags: [plane, lifecycle]
     - role: authentik
       tags: [authentik, lifecycle]
     - role: cloudflare_ddns
