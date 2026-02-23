@@ -7,7 +7,6 @@ services:
       - /etc/homelab/secrets/plane.env
     environment:
       DATABASE_URL: postgresql://plane:${PLANE_DB_PASSWORD}@geek-postgres:5432/plane
-      REDIS_URL: redis://redis:6379/
       SECRET_KEY: ${PLANE_SECRET_KEY}
       CORS_ALLOWED_ORIGINS: "http://plane.geek,https://plane.johnnyblabs.com"
       DEBUG: "False"
@@ -15,8 +14,6 @@ services:
       - /srv/homelab/plane/data:/app/plane/data
     networks:
       - geek-infra
-    depends_on:
-      - geek-postgres
     expose:
       - "8000"
 

@@ -21,50 +21,16 @@
   when: not plane_secrets.stat.exists
   tags: [plane, lifecycle]
 
-- name: Get PostgreSQL password from secrets file
-  shell: grep POSTGRES_PASSWORD /etc/homelab/secrets/postgres.env | cut -d= -f2
-  become: yes
-  register: postgres_password
-  tags: [plane, lifecycle]
-
-- name: Get Plane DB password from secrets file
-  shell: grep PLANE_DB_PASSWORD /etc/homelab/secrets/plane.env | cut -d= -f2
-  become: yes
-  register: plane_db_password
-  tags: [plane, lifecycle]
-
-- name: Create Plane database in PostgreSQL
-  community.postgresql.postgresql_db:
-    name: plane
-    state: present
-    login_host: localhost
-    login_user: postgres
-    login_password: "{{ postgres_password.stdout }}"
-  become: yes
-  tags: [plane, lifecycle]
-
-- name: Create Plane PostgreSQL user
-  community.postgresql.postgresql_user:
-    name: plane
-    password: "{{ plane_db_password.stdout }}"
-    db: plane
-    state: present
-    login_host: localhost
-    login_user: postgres
-    login_password: "{{ postgres_password.stdout }}"
-  become: yes
-  tags: [plane, lifecycle]
-
-- name: Grant Plane user database permissions
-  community.postgresql.postgresql_privs:
-    db: plane
-    privs: ALL
-    type: database
-    obj: plane
-    role: plane
-    login_host: localhost
-    login_user: postgres
-    login_password: "{{ postgres_password.stdout }}"
+- name: Verify Plane database and user exist
+  shell: |
+    # Check if database exists
+    docker exec geek-postgres psql -U postgres -lqt | cut -d \| -f 1 | grep -qw plane || {
+      PGPASSWORD=$(grep POSTGRES_PASSWORD /etc/homelab/secrets/postgres.env | cut -d= -f2)
+      export PGPASSWORD
+      docker exec geek-postgres psql -U postgres -c "CREATE DATABASE plane;"
+      docker exec geek-postgres psql -U postgres -c "CREATE USER plane WITH PASSWORD '$(grep PLANE_DB_PASSWORD /etc/homelab/secrets/plane.env | cut -d= -f2)';"
+      docker exec geek-postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE plane TO plane;"
+    }
   become: yes
   tags: [plane, lifecycle]
 
