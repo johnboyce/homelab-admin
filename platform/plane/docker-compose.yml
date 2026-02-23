@@ -1,15 +1,17 @@
 services:
   plane:
-    image: plane:latest
+    image: makeplane/plane:latest
     container_name: plane
     restart: unless-stopped
     env_file:
       - /etc/homelab/secrets/plane.env
     environment:
-      DATABASE_URL: postgresql://plane:${PLANE_DB_PASSWORD}@geek-postgres:5432/plane
-      SECRET_KEY: ${PLANE_SECRET_KEY}
+      # Plane will read PLANE_DB_PASSWORD and PLANE_SECRET_KEY from env_file
+      # Set additional configuration here:
       CORS_ALLOWED_ORIGINS: "http://plane.geek,https://plane.johnnyblabs.com"
       DEBUG: "False"
+      # For multi-db setup, Plane uses DB_ENGINE, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+      # Or can use DATABASE_URL if properly set in env_file
     volumes:
       - /srv/homelab/plane/data:/app/plane/data
     networks:
