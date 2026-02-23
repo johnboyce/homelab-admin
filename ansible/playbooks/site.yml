@@ -35,3 +35,7 @@
       tags: [pihole, lifecycle]
     - role: bookstack
       tags: [bookstack, lifecycle]
+    - role: forgejo
+      tags: [forgejo, lifecycle]
+    - role: woodpecker
+      tags: [woodpecker, lifecycle]

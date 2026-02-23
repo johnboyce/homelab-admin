@@ -1,0 +1,54 @@
+---
+# Forgejo self-hosted Git service
+# Lightweight Gitea fork — Git hosting with Authentik SSO via OAuth2
+# Secrets: /etc/homelab/secrets/forgejo.env
+# Data:    /srv/homelab/forgejo/data
+# Access:  http://forgejo.geek (nginx proxy), SSH git on port 222
+
+- name: Check Forgejo secrets file exists
+  stat:
+    path: /etc/homelab/secrets/forgejo.env
+  become: yes
+  register: forgejo_secrets
+  tags: [forgejo, lifecycle]
+
+- name: Fail if Forgejo secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/forgejo.env not found.
+      Copy from example and fill in real values:
+        sudo cp ~/homelab-admin/platform/forgejo/.env.example /etc/homelab/secrets/forgejo.env
+        sudo chmod 600 /etc/homelab/secrets/forgejo.env
+      Required variables:
+        FORGEJO__database__PASSWD     — PostgreSQL password for forgejo user
+        FORGEJO__security__SECRET_KEY — 64-char hex (openssl rand -hex 32)
+        FORGEJO__security__INTERNAL_TOKEN — JWT token (openssl rand -hex 64)
+  when: not forgejo_secrets.stat.exists
+  tags: [forgejo, lifecycle]
+
+- name: Ensure Forgejo data directory exists
+  file:
+    path: /srv/homelab/forgejo/data
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  tags: [forgejo, lifecycle]
+
+- name: Ensure Forgejo stack is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/forgejo
+    state: present
+  become: yes
+  tags: [forgejo, lifecycle]
+
+- name: Wait for Forgejo to be ready
+  uri:
+    url: http://forgejo:3000/
+    status_code: [200, 302]
+  register: forgejo_result
+  until: forgejo_result.status in [200, 302]
+  retries: 30
+  delay: 5
+  tags: [forgejo, lifecycle]

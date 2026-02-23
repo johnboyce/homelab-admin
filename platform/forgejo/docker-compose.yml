@@ -1,0 +1,33 @@
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:10
+    container_name: forgejo
+    restart: unless-stopped
+    env_file: /etc/homelab/secrets/forgejo.env
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      FORGEJO__database__DB_TYPE: postgres
+      FORGEJO__database__HOST: geek-postgres:5432
+      FORGEJO__database__NAME: forgejo
+      FORGEJO__database__USER: forgejo
+      FORGEJO__server__DOMAIN: forgejo.geek
+      FORGEJO__server__ROOT_URL: "http://forgejo.geek/"
+      FORGEJO__server__HTTP_PORT: "3000"
+      FORGEJO__server__SSH_DOMAIN: geek
+      FORGEJO__server__SSH_PORT: "222"
+      FORGEJO__server__SSH_LISTEN_PORT: "2222"
+      FORGEJO__server__START_SSH_SERVER: "true"
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+      FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
+      FORGEJO__log__LEVEL: warn
+    volumes:
+      - /srv/homelab/forgejo/data:/data
+    ports:
+      - "222:2222"
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true

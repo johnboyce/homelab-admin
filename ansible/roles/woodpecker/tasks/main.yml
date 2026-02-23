@@ -1,0 +1,55 @@
+---
+# Woodpecker CI — lightweight CI/CD (Drone fork)
+# Authenticates via Forgejo OAuth2 (no direct Authentik integration needed)
+# Secrets: /etc/homelab/secrets/woodpecker.env
+# Access:  http://woodpecker.geek (nginx proxy)
+# Note: Configure Forgejo OAuth2 app first, then update secrets and restart
+
+- name: Check Woodpecker secrets file exists
+  stat:
+    path: /etc/homelab/secrets/woodpecker.env
+  become: yes
+  register: woodpecker_secrets
+  tags: [woodpecker, lifecycle]
+
+- name: Fail if Woodpecker secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/woodpecker.env not found.
+      Copy from example and fill in real values:
+        sudo cp ~/homelab-admin/platform/woodpecker/.env.example /etc/homelab/secrets/woodpecker.env
+        sudo chmod 600 /etc/homelab/secrets/woodpecker.env
+      Required variables:
+        WOODPECKER_AGENT_SECRET       — shared secret (openssl rand -hex 32)
+        WOODPECKER_FORGEJO_CLIENT     — from Forgejo OAuth2 app
+        WOODPECKER_FORGEJO_SECRET     — from Forgejo OAuth2 app
+        WOODPECKER_DATABASE_DATASOURCE — PostgreSQL connection string
+  when: not woodpecker_secrets.stat.exists
+  tags: [woodpecker, lifecycle]
+
+- name: Ensure Woodpecker agent data directory exists
+  file:
+    path: /srv/homelab/woodpecker/agent
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  tags: [woodpecker, lifecycle]
+
+- name: Ensure Woodpecker stack is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/woodpecker
+    state: present
+  become: yes
+  tags: [woodpecker, lifecycle]
+
+- name: Wait for Woodpecker server to be ready
+  uri:
+    url: http://woodpecker-server:8000/
+    status_code: [200, 302]
+  register: woodpecker_result
+  until: woodpecker_result.status in [200, 302]
+  retries: 30
+  delay: 5
+  tags: [woodpecker, lifecycle]

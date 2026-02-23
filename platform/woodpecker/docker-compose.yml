@@ -1,0 +1,38 @@
+services:
+  woodpecker-server:
+    image: woodpeckerci/woodpecker-server:latest
+    container_name: woodpecker-server
+    restart: unless-stopped
+    env_file: /etc/homelab/secrets/woodpecker.env
+    environment:
+      WOODPECKER_HOST: "http://woodpecker.geek"
+      WOODPECKER_FORGEJO: "true"
+      WOODPECKER_FORGEJO_URL: "http://forgejo:3000"
+      WOODPECKER_DATABASE_DRIVER: postgres
+      WOODPECKER_OPEN: "false"
+      WOODPECKER_ADMIN: johnb
+      WOODPECKER_LOG_LEVEL: warn
+    networks:
+      - geek-infra
+
+  woodpecker-agent:
+    image: woodpeckerci/woodpecker-agent:latest
+    container_name: woodpecker-agent
+    restart: unless-stopped
+    env_file: /etc/homelab/secrets/woodpecker.env
+    environment:
+      WOODPECKER_SERVER: woodpecker-server:9000
+      WOODPECKER_BACKEND: docker
+      WOODPECKER_MAX_WORKFLOWS: "4"
+      WOODPECKER_LOG_LEVEL: warn
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/homelab/woodpecker/agent:/etc/woodpecker
+    depends_on:
+      - woodpecker-server
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true
