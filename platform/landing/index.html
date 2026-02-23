@@ -544,17 +544,20 @@
 
         async function fetchStockPrice(symbol) {
             try {
-                const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=cth4g8pr01qq8dfatvfgcth4g8pr01qq8dfatvfg`);
+                const response = await fetch(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=price`);
                 const data = await response.json();
 
-                if (data.c) {
-                    const change = data.d || 0;
-                    const changePercent = data.dp || 0;
-                    const priceHTML = `$${data.c.toFixed(2)} <span class="stock-change ${change >= 0 ? 'stock-up' : 'stock-down'}">${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</span>`;
+                if (data.quoteSummary && data.quoteSummary.result) {
+                    const price = data.quoteSummary.result[0].price;
+                    const currentPrice = price.regularMarketPrice.raw;
+                    const change = price.regularMarketChange.raw;
+                    const changePercent = price.regularMarketChangePercent.raw;
+                    const priceHTML = `$${currentPrice.toFixed(2)} <span class="stock-change ${change >= 0 ? 'stock-up' : 'stock-down'}">${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</span>`;
                     document.getElementById(`stock-${symbol}`).innerHTML = priceHTML;
                 }
             } catch (error) {
                 console.error(`Failed to fetch ${symbol}:`, error);
+                document.getElementById(`stock-${symbol}`).innerHTML = 'N/A';
             }
         }
 
@@ -566,7 +569,7 @@
 
             try {
                 const response = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,humidity,wind_speed_10m&temperature_unit=fahrenheit&timezone=auto`
+                    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`
                 );
                 const data = await response.json();
                 const current = data.current;
@@ -579,12 +582,8 @@
                     </div>
                     <div class="weather-details">
                         <div class="weather-detail">
-                            <div class="weather-detail-label">Humidity</div>
-                            ${current.humidity}%
-                        </div>
-                        <div class="weather-detail">
-                            <div class="weather-detail-label">Wind</div>
-                            ${Math.round(current.wind_speed_10m)} mph
+                            <div class="weather-detail-label">Location</div>
+                            19342, PA
                         </div>
                     </div>
                 `;
@@ -592,6 +591,7 @@
                 container.innerHTML = html;
             } catch (error) {
                 container.innerHTML = '<div class="error">Unable to load weather data</div>';
+                console.error('Weather error:', error);
             }
         }
 
@@ -608,13 +608,13 @@
             return weatherCodes[code] || 'Unknown';
         }
 
-        // Fetch news
+        // Fetch news using CORS proxy
         async function loadNews() {
             const container = document.getElementById('news-container');
 
             try {
                 const response = await fetch(
-                    `https://newsapi.org/v2/top-headlines?country=us&pageSize=5&apiKey=dc29f3da662944eca51fa501ae1f5c19`
+                    `https://api.allorigins.win/raw?url=https://newsapi.org/v2/top-headlines?country=us&pageSize=5&apiKey=dc29f3da662944eca51fa501ae1f5c19`
                 );
                 const data = await response.json();
 
@@ -632,6 +632,7 @@
                 }
             } catch (error) {
                 container.innerHTML = '<div class="error">Unable to load news</div>';
+                console.error('News error:', error);
             }
         }
 
