@@ -44,13 +44,14 @@
   become: yes
   tags: [woodpecker, lifecycle]
 
-- name: Wait for Woodpecker server to be ready
-  uri:
-    url: http://woodpecker-server:8000/
-    status_code: [200, 302]
-  register: woodpecker_result
-  until: woodpecker_result.status in [200, 302]
-  retries: 1
-  delay: 5
-  ignore_errors: yes
+- name: Check Woodpecker server container is running
+  community.docker.docker_container_info:
+    name: woodpecker-server
+  register: woodpecker_info
+  become: yes
+  tags: [woodpecker, lifecycle]
+
+- name: Report Woodpecker status
+  debug:
+    msg: "Woodpecker server container state: {{ woodpecker_info.container.State.Status | default('not found') }}"
   tags: [woodpecker, lifecycle]

@@ -87,13 +87,16 @@ ansible/
 ├── roles/
 │   ├── authentik/                  # Authentik SSO (server, worker, outpost)
 │   ├── bookstack/                  # BookStack wiki
+│   ├── cloudflare_ddns/            # Cloudflare DDNS updater
+│   ├── docker_infra/               # Docker network setup (geek-infra)
+│   ├── firewall/                   # UFW firewall rules
+│   ├── forgejo/                    # Forgejo Git service
+│   ├── landing/                    # nginx landing page
+│   ├── nginx/                      # nginx reverse proxy
+│   ├── pihole/                     # Pi-hole DNS
+│   ├── plane/                      # Plane project management
 │   ├── postgres/                   # PostgreSQL database
-│   ├── redis/                       # Redis cache
-│   ├── pihole/                      # Pi-hole DNS
-│   ├── cloudflare_ddns/            # DDNS service
-│   ├── nginx/                       # nginx reverse proxy
-│   ├── docker_infra/               # Docker network setup
-│   └── firewall/                    # UFW firewall rules
+│   └── woodpecker/                 # Woodpecker CI
 │
 ├── inventory/
 │   ├── hosts.ini                   # Host definitions (geek)
@@ -139,6 +142,43 @@ graph TD
     style H fill:#95E1D3
     style I fill:#FF6B6B
 ```
+
+### Health Check Patterns
+
+Services use different health check strategies depending on whether they expose ports to the host:
+
+**Services with HTTP on localhost** (e.g., landing page via nginx):
+```yaml
+- name: Flush handlers before health check (ensures nginx is reloaded)
+  meta: flush_handlers
+
+- name: Wait for service to be ready
+  uri:
+    url: http://localhost/healthz
+    headers:
+      Host: geek          # Must match nginx server_name — catch-all returns 444
+    status_code: [200]
+  retries: 10
+  delay: 2
+  register: result
+  until: result.status == 200
+  ignore_errors: yes
+```
+
+**Services without exposed host ports** (e.g., Forgejo, Woodpecker — only reachable via nginx on `geek-infra`):
+```yaml
+- name: Check container is running
+  community.docker.docker_container_info:
+    name: forgejo
+  register: forgejo_info
+  become: yes
+
+- name: Report status
+  debug:
+    msg: "Forgejo container state: {{ forgejo_info.container.State.Status | default('not found') }}"
+```
+
+> **Why not `http://forgejo:3000/`?** Container names only resolve within the Docker network. Ansible's `uri` module runs on the host, where Docker DNS is unavailable. Neither Forgejo nor Woodpecker expose HTTP ports to the host (only Forgejo SSH on 222:2222).
 
 ### Example: BookStack Role
 
@@ -218,15 +258,18 @@ make ansible-apply
 ```
 
 Executes all roles in sequence:
-1. `docker_infra` (network setup)
-2. `postgres` (database)
-3. `authentik` (identity)
-4. `bookstack` (wiki)
-5. `pihole` (DNS)
-6. `redis` (cache, optional)
-7. `cloudflare_ddns` (DDNS)
-8. `nginx` (reverse proxy)
-9. `firewall` (UFW rules)
+1. `firewall` (UFW rules)
+2. `nginx` (reverse proxy config sync + reload)
+3. `docker_infra` (geek-infra network)
+4. `landing` (nginx landing page)
+5. `postgres` (database)
+6. `plane` (project management)
+7. `authentik` (identity/SSO)
+8. `cloudflare_ddns` (DDNS)
+9. `pihole` (DNS)
+10. `bookstack` (wiki)
+11. `forgejo` (Git service)
+12. `woodpecker` (CI)
 
 ### Deploy Single Service
 
@@ -289,6 +332,8 @@ Expected files:
 - [ ] `bookstack.env`
 - [ ] `postgres.env`
 - [ ] `cloudflare-ddns.env`
+- [ ] `forgejo.env`
+- [ ] `woodpecker.env`
 
 If any are missing, create them manually on geek:
 ```bash
@@ -525,7 +570,7 @@ Some tasks aren't fully idempotent yet. Future improvements:
 
 ---
 
-**Last Updated:** 2026-02-22
+**Last Updated:** 2026-02-26
 **Ansible Version:** 2.10+
 **Deployment Method:** Pull-based from geek host
 **Maintenance Owner:** John Boyce

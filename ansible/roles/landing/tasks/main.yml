@@ -6,13 +6,18 @@
   become: yes
   register: landing_result
 
+- name: Flush handlers before health check (ensures nginx is reloaded)
+  meta: flush_handlers
+
 - name: Wait for landing page to be ready
   uri:
-    url: http://localhost/
-    status_code: [200, 301, 302]
+    url: http://localhost/healthz
+    headers:
+      Host: geek
+    status_code: [200]
   retries: 10
   delay: 2
   register: result
-  until: result.status in [200, 301, 302]
+  until: result.status == 200
   become: no
   ignore_errors: yes

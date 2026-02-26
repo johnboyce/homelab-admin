@@ -10,161 +10,81 @@ This file tracks progress of migrating from shell scripts to Ansible-based infra
 | Ansible foundation | ✓ Done | 2026-02-21 | Playbooks, roles, vars structure in place |
 | Port registry | ✓ Done | 2026-02-21 | `group_vars/all.yml` - single source of truth |
 | **Firewall** | | | |
-| UFW automation | ✓ Done | Previous session | `scripts/setup_firewall.sh` |
-| Ansible firewall role | ✓ Done | 2026-02-21 | `roles/firewall/tasks/main.yml` idempotent |
-| Firewall dry-run test | ⧗ Pending | | `make ansible-dry-run` |
+| UFW automation | ✓ Done | 2026-02-21 | Ansible `roles/firewall` — idempotent |
+| Forgejo SSH rule (222/tcp) | ✓ Done | 2026-02-22 | LAN-only, added to port registry |
 | **nginx** | | | |
-| nginx deployment script | ✓ Done | Previous session | `scripts/nginx_deploy_to_host.sh` |
-| Ansible nginx role | ✓ Done | 2026-02-21 | `roles/nginx/tasks/main.yml` with sync + reload |
-| nginx config sync test | ⧗ Pending | | `make ansible-nginx --check` |
+| Ansible nginx role | ✓ Done | 2026-02-21 | Config sync + reload handler |
+| Health check fix | ✓ Done | 2026-02-26 | `Host: geek` header + `/healthz` endpoint; `meta: flush_handlers` before check |
 | **Docker Services** | | | |
-| docker_infra network | ✓ Done (stub) | 2026-02-21 | `roles/docker_infra/tasks/main.yml` |
-| PostgreSQL | ✓ Done (stub) | 2026-02-21 | `roles/postgres/tasks/main.yml` - Phase 5 |
-| Authentik | ✓ Done (stub) | 2026-02-21 | `roles/authentik/tasks/main.yml` - Phase 5 |
+| docker_infra network | ✓ Done | 2026-02-21 | `roles/docker_infra` — geek-infra network |
+| landing | ✓ Done | 2026-02-22 | `roles/landing` |
+| PostgreSQL | ✓ Done | 2026-02-21 | `roles/postgres` |
+| Authentik | ✓ Done | 2026-02-21 | `roles/authentik` |
+| BookStack | ✓ Done | 2026-02-22 | `roles/bookstack` |
+| Pi-hole | ✓ Done | 2026-02-22 | `roles/pihole` — dnsmasq conf deployed |
+| Cloudflare DDNS | ✓ Done | 2026-02-22 | `roles/cloudflare_ddns` |
+| Plane | ✓ Done | 2026-02-22 | `roles/plane` — community deployment |
+| Forgejo | ✓ Done | 2026-02-22 | `roles/forgejo` — container state check (no host ports) |
+| Woodpecker CI | ✓ Done | 2026-02-22 | `roles/woodpecker` — container state check (no host ports) |
 | **Documentation** | | | |
-| Ansible section in CLAUDE.md | ⧗ Pending | | Update agent guidance |
-| homelab_status.sh Ansible info | ⧗ Pending | | Add managed components display |
+| ANSIBLE_DEPLOYMENT.md | ✓ Done | 2026-02-26 | Roles list, health check patterns, secrets checklist updated |
+| STATUS.md | ✓ Done | 2026-02-26 | Reflects actual deployed state |
 
-## What Was Done Before This Session
+## All Phases Complete
 
-- ✓ nginx deployment script (`scripts/nginx_deploy_to_host.sh`)
-  - OS-aware (macOS/Linux/geek host)
-  - Handles tar+SSH deployment
-  - Tests and reloads nginx in container
-
-- ✓ Firewall automation (`scripts/setup_firewall.sh`)
-  - UFW rules for all services
-  - LAN-only segmentation
-  - Safety checks
-
-- ✓ PostgreSQL backup system (`scripts/backup_postgresql.sh`)
-  - Backup/restore/list operations
-  - Disaster recovery procedures
-
-- ✓ Service status dashboard (`scripts/homelab_status.sh`)
-  - Shows running containers
-  - Service accessibility (LAN vs Internet)
-  - Health checks
-
-- ✓ Comprehensive documentation
-  - FIREWALL.md - firewall rules and management
-  - BACKUP.md - backup procedures
-  - README.md with Make targets and documentation index
-
-## What This Session (Ansible Migration) Added
-
-- ✓ Ansible 13.3.0 installed (via Homebrew)
-- ✓ Collections installed (community.general, community.docker)
-- ✓ Ansible directory structure (`ansible/` directory)
-- ✓ ansible.cfg - connection configuration
-- ✓ inventory/hosts.ini - geek host definition
-- ✓ requirements.yml - collection dependencies
-- ✓ group_vars/all.yml - **Port Registry** (single source of truth for all ports)
-- ✓ Playbooks:
-  - site.yml - full convergence
-  - status.yml - read-only facts gathering
-  - firewall.yml - firewall only
-  - nginx.yml - nginx config only
-  - docker.yml - docker services
-- ✓ Roles (Phase-based):
-  - firewall role - idempotent UFW rules from port registry
-  - nginx role - config sync with handlers
-  - docker_infra role - network management
-  - postgres role - stub for Phase 5
-  - authentik role - stub for Phase 5
-- ✓ Makefile targets:
-  - ansible-install
-  - ansible-status (working ✓)
-  - ansible-dry-run
-  - ansible-firewall
-  - ansible-nginx
-
-## Phased Implementation Plan
-
-### Phase 1: Foundation ✓ COMPLETE
+### Phase 1: Foundation ✓
 - [x] Ansible installation and configuration
 - [x] Directory structure
-- [x] Port registry in group_vars
-- [x] Connectivity test with status.yml
+- [x] Port registry in `group_vars/all.yml`
+- [x] Connectivity test with `status.yml`
 
-### Phase 2: Firewall (Ready for Testing)
-- [x] Firewall role with UFW tasks
-- [ ] Dry-run test: `make ansible-dry-run --tags firewall`
-- [ ] Compare output against current `ufw status numbered`
-- [ ] Apply: `make ansible-firewall`
+### Phase 2: Firewall ✓
+- [x] Firewall role with idempotent UFW rules
+- [x] LAN-only segmentation for Cockpit, Ollama, VNC, Forgejo SSH, Plane
+- [x] WAN block rules for RDP, Cockpit, Plane, VNC
 
-### Phase 3: nginx Config (Ready for Testing)
-- [x] nginx role with config sync
-- [x] Handlers for test+reload
-- [ ] Dry-run test: `make ansible-dry-run --tags nginx`
-- [ ] Apply: `make ansible-nginx`
-- [ ] Verify with: `make nginx-test`
+### Phase 3: nginx ✓
+- [x] Config sync from repo to host
+- [x] Test + reload handler
+- [x] Health check fixed: `Host: geek` header + `/healthz`, flush_handlers before check
 
-### Phase 4: Docker Infrastructure (Ready)
-- [x] docker_infra role for geek-infra network
-- [ ] Test: `make ansible-dry-run --tags docker`
+### Phase 4: Docker Infrastructure ✓
+- [x] `geek-infra` Docker network managed by Ansible
 
-### Phase 5: Service Management (Stubs Ready)
-- [x] postgres role (stub - uncomment when ready)
-- [x] authentik role (stub - uncomment when ready)
-- [ ] To activate: uncomment docker_compose_v2 tasks
-- [ ] Test with --check mode first
+### Phase 5: All Services ✓
+- [x] PostgreSQL, Authentik, BookStack, Pi-hole, Cloudflare DDNS
+- [x] Plane (community deployment, proxy attached to geek-infra)
+- [x] Forgejo (Git service, SSH on 222:2222, HTTP via nginx only)
+- [x] Woodpecker CI (OAuth via Forgejo, HTTP via nginx only)
 
 ## Key Design Decisions
 
 1. **Port Registry** (`group_vars/all.yml`)
    - All ports defined in one place
-   - Referenced by firewall rules, nginx configs, docker-compose templates
-   - Eliminates port management hell
+   - Referenced by firewall rules, nginx configs, docker-compose files
+   - Eliminates port management drift
 
 2. **Coexistence Not Replacement**
-   - Roles use `state: present` not `state: restarted`
+   - Roles use `state: present` — does not restart running services unnecessarily
    - Dry-run (`--check --diff`) validates before applying
-   - Can run alongside existing shell scripts
+   - Coexists with existing shell scripts (`make nginx-deploy`, etc.)
 
 3. **Tag-Based Execution**
-   - `bootstrap` - initial setup (enable UFW, create network)
-   - `config` - configuration updates (rules, files)
-   - `lifecycle` - service start/stop (phase 5+)
+   - Run a single service: `make ansible-apply ARGS='--tags forgejo'`
+   - Run multiple: `make ansible-apply ARGS='--tags forgejo,woodpecker'`
 
 4. **Idempotency**
    - Run twice → no changes on second run
-   - Verified with `--check` before apply
-   - UFW module handles rule deduplication
+   - Verified: `changed=0` on second `make ansible-apply`
 
-## Testing Checklist
+5. **Health Check Strategy**
+   - Services with nginx `/healthz`: use `uri` with `Host: geek` header + `meta: flush_handlers`
+   - Services without host-exposed HTTP ports (Forgejo, Woodpecker): use `community.docker.docker_container_info`
+   - Reason: container DNS names are not resolvable from the Ansible host
 
-Before marking a phase complete:
+## Remaining Improvements (Optional)
 
-- [ ] Run `make ansible-dry-run --tags [phase]` and review output
-- [ ] Run `make ansible-[phase]` to apply
-- [ ] Verify services still running (if applicable)
-- [ ] Run `make ansible-status` to confirm facts updated
-- [ ] Run playbook twice → second run shows `changed=0`
-
-## Migration Completion Criteria
-
-- All 5 phases tested and applied
-- `make homelab-status` shows Ansible-managed components
-- Disaster recovery playbook exists and tested
-- All shell scripts either replaced or deprecated in comments
-- Documentation updated in CLAUDE.md
-- No manual configuration on geek host outside Ansible
-
-## Next Steps
-
-1. Test Phase 2 firewall:
-   ```bash
-   make ansible-dry-run --tags firewall
-   # Review output, compare to: ssh johnb@geek sudo ufw status numbered
-   make ansible-firewall
-   ```
-
-2. Test Phase 3 nginx:
-   ```bash
-   make ansible-dry-run --tags nginx --diff
-   make ansible-nginx
-   make nginx-test  # Fallback shell script still works
-   ```
-
-3. Create final progress report and disaster recovery playbook
+- [ ] Ansible Vault for secrets (replaces manual `/etc/homelab/secrets/` management)
+- [ ] `changed_when: false` on read-only tasks to suppress noise
+- [ ] Disaster recovery playbook
+- [ ] Alert on health check failure (currently `ignore_errors: yes`)

@@ -43,13 +43,14 @@
   become: yes
   tags: [forgejo, lifecycle]
 
-- name: Wait for Forgejo to be ready
-  uri:
-    url: http://forgejo:3000/
-    status_code: [200, 302]
-  register: forgejo_result
-  until: forgejo_result.status in [200, 302]
-  retries: 1
-  delay: 5
-  ignore_errors: yes
+- name: Check Forgejo container is running
+  community.docker.docker_container_info:
+    name: forgejo
+  register: forgejo_info
+  become: yes
+  tags: [forgejo, lifecycle]
+
+- name: Report Forgejo status
+  debug:
+    msg: "Forgejo container state: {{ forgejo_info.container.State.Status | default('not found') }}"
   tags: [forgejo, lifecycle]
