@@ -30,9 +30,9 @@
   file:
     path: /srv/homelab/forgejo/data
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "1000"
+    group: "1000"
+    mode: '0750'
   become: yes
   tags: [forgejo, lifecycle]
 
