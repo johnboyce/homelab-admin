@@ -29,13 +29,25 @@
   become: yes
   loop:
     - /srv/homelab/pihole/etc-pihole
+    - /srv/homelab/pihole/etc-pihole/hosts
     - /srv/homelab/pihole/etc-dnsmasq.d
   tags: [pihole, lifecycle]
 
-- name: Deploy homelab internal DNS config (dnsmasq)
+- name: Deploy homelab internal DNS config (dnsmasq wildcard fallback)
   copy:
     src: "{{ playbook_dir | dirname | dirname }}/platform/pihole/etc-dnsmasq.d/05-geek-local.conf"
     dest: /srv/homelab/pihole/etc-dnsmasq.d/05-geek-local.conf
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  notify: Restart Pi-hole DNS
+  tags: [pihole, dns]
+
+- name: Deploy homelab internal DNS hosts list (Pi-hole FTL v6)
+  copy:
+    src: "{{ playbook_dir | dirname | dirname }}/platform/pihole/etc-pihole/hosts/05-geek-local.list"
+    dest: /srv/homelab/pihole/etc-pihole/hosts/05-geek-local.list
     owner: root
     group: root
     mode: '0644'

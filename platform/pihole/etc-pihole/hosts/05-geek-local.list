@@ -1,0 +1,16 @@
+# Homelab internal DNS — explicit .geek host entries for Pi-hole FTL v6
+# Managed by Ansible (ansible/roles/pihole/tasks/main.yml).
+#
+# Pi-hole FTL v6 resolves from this hosts file before applying dnsmasq
+# address= wildcards, so new services must be added here explicitly.
+# All entries resolve to geek host (192.168.1.187) via nginx reverse proxy.
+
+192.168.1.187 geek
+192.168.1.187 auth.geek
+192.168.1.187 bookstack.geek
+192.168.1.187 forgejo.geek
+192.168.1.187 ollama.geek
+192.168.1.187 pihole.geek
+192.168.1.187 plane.geek
+192.168.1.187 vaultwarden.geek
+192.168.1.187 woodpecker.geek
