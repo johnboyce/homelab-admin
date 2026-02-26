@@ -1,0 +1,18 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    env_file: /etc/homelab/secrets/vaultwarden.env
+    environment:
+      DOMAIN: "https://vaultwarden.johnnyblabs.com"
+      SIGNUPS_ALLOWED: "false"
+      LOG_LEVEL: warn
+    volumes:
+      - /srv/homelab/vaultwarden/data:/data
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true

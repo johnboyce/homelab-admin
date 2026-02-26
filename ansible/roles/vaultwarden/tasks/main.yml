@@ -1,0 +1,59 @@
+---
+# Vaultwarden — self-hosted Bitwarden-compatible password manager
+# Secrets: /etc/homelab/secrets/vaultwarden.env
+# Data:    /srv/homelab/vaultwarden/data
+# Access:  http://vaultwarden.geek (LAN), https://vaultwarden.johnnyblabs.com (WAN)
+# Note:    No Authentik forward-auth — Bitwarden clients authenticate directly
+
+- name: Check Vaultwarden secrets file exists
+  stat:
+    path: /etc/homelab/secrets/vaultwarden.env
+  become: yes
+  register: vaultwarden_secrets
+  tags: [vaultwarden, lifecycle]
+
+- name: Fail if Vaultwarden secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/vaultwarden.env not found.
+      Copy from example and fill in real values:
+        sudo cp ~/homelab-admin/platform/vaultwarden/.env.example /etc/homelab/secrets/vaultwarden.env
+        sudo chmod 600 /etc/homelab/secrets/vaultwarden.env
+      Required variables:
+        DATABASE_URL   — postgresql://vaultwarden:PASSWORD@geek-postgres:5432/vaultwarden
+        ADMIN_TOKEN    — argon2id hash (generate: docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp)
+      One-time DB setup:
+        sudo docker exec geek-postgres psql -U postgres -c \
+          "CREATE USER vaultwarden WITH PASSWORD 'PASSWORD';
+           CREATE DATABASE vaultwarden OWNER vaultwarden ENCODING 'UTF8';"
+  when: not vaultwarden_secrets.stat.exists
+  tags: [vaultwarden, lifecycle]
+
+- name: Ensure Vaultwarden data directory exists
+  file:
+    path: /srv/homelab/vaultwarden/data
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  become: yes
+  tags: [vaultwarden, lifecycle]
+
+- name: Ensure Vaultwarden stack is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/vaultwarden
+    state: present
+  become: yes
+  tags: [vaultwarden, lifecycle]
+
+- name: Check Vaultwarden container is running
+  community.docker.docker_container_info:
+    name: vaultwarden
+  register: vaultwarden_info
+  become: yes
+  tags: [vaultwarden, lifecycle]
+
+- name: Report Vaultwarden status
+  debug:
+    msg: "Vaultwarden container state: {{ vaultwarden_info.container.State.Status | default('not found') }}"
+  tags: [vaultwarden, lifecycle]

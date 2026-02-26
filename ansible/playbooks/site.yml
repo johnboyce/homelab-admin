@@ -39,3 +39,5 @@
       tags: [forgejo, lifecycle]
     - role: woodpecker
       tags: [woodpecker, lifecycle]
+    - role: vaultwarden
+      tags: [vaultwarden, lifecycle]
