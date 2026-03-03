@@ -10,6 +10,7 @@ services:
       - sh
       - -c
       - |
+        cd /data
         if [ ! -f /data/.runner ]; then
           forgejo-runner register --no-interactive \
             --instance "$$FORGEJO_INSTANCE_URL" \
