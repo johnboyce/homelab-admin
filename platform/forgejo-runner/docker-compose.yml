@@ -1,0 +1,17 @@
+services:
+  forgejo-runner:
+    image: code.forgejo.org/forgejo/runner:6
+    container_name: forgejo-runner
+    restart: unless-stopped
+    env_file: /etc/homelab/secrets/forgejo-runner.env
+    environment:
+      FORGEJO_INSTANCE_URL: "http://forgejo.geek"
+    volumes:
+      - /srv/homelab/forgejo-runner/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true

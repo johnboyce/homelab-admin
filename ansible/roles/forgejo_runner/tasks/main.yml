@@ -1,0 +1,41 @@
+---
+- name: Check forgejo-runner secrets file exists
+  stat:
+    path: /etc/homelab/secrets/forgejo-runner.env
+  register: runner_secrets
+
+- name: Fail if forgejo-runner secrets missing
+  fail:
+    msg: |
+      Missing /etc/homelab/secrets/forgejo-runner.env
+      Create it with:
+        FORGEJO_RUNNER_REGISTRATION_TOKEN=<token from Forgejo admin>
+      Generate token: docker exec -u 1000 forgejo forgejo forgejo-cli actions generate-runner-token
+  when: not runner_secrets.stat.exists
+
+- name: Ensure forgejo-runner data directory exists
+  file:
+    path: /srv/homelab/forgejo-runner/data
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+
+- name: Deploy forgejo-runner via docker-compose
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/forgejo-runner
+    state: present
+  become: yes
+  register: runner_result
+
+- name: Check forgejo-runner container status
+  community.docker.docker_container_info:
+    name: forgejo-runner
+  register: runner_info
+  become: yes
+
+- name: Show forgejo-runner status
+  debug:
+    msg: "forgejo-runner is {{ runner_info.container.State.Status }}"
+  when: runner_info.exists
