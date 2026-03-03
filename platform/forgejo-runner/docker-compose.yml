@@ -6,6 +6,8 @@ services:
     env_file: /etc/homelab/secrets/forgejo-runner.env
     environment:
       FORGEJO_INSTANCE_URL: "http://forgejo.geek"
+    group_add:
+      - "983"  # docker group GID on geek host
     command:
       - sh
       - -c
