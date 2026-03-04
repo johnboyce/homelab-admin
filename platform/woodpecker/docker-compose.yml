@@ -7,7 +7,7 @@ services:
     environment:
       WOODPECKER_HOST: "http://woodpecker.geek"
       WOODPECKER_FORGEJO: "true"
-      WOODPECKER_FORGEJO_URL: "http://forgejo:3000"
+      WOODPECKER_FORGEJO_URL: "http://forgejo.geek"
       WOODPECKER_DATABASE_DRIVER: postgres
       WOODPECKER_OPEN: "false"
       WOODPECKER_ADMIN: johnb
