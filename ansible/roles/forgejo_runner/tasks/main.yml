@@ -1,4 +1,32 @@
 ---
+# ── Docker installation ───────────────────────────────────────────────────────
+
+- name: Install Docker packages
+  apt:
+    name:
+      - docker.io
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Enable and start Docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+  become: yes
+
+- name: Add forgejo-runner user to docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+  become: yes
+  notify: Restart forgejo-runner
+
+# ── Secrets and data directory ────────────────────────────────────────────────
+
 - name: Check forgejo-runner secrets file exists
   stat:
     path: /etc/homelab/secrets/forgejo-runner.env
@@ -21,6 +49,8 @@
     group: "1000"
     mode: '0755'
   become: yes
+
+# ── Deploy ────────────────────────────────────────────────────────────────────
 
 - name: Deploy forgejo-runner via docker-compose
   community.docker.docker_compose_v2:

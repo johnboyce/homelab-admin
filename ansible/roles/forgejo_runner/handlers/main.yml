@@ -1,0 +1,7 @@
+---
+- name: Restart forgejo-runner
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/forgejo-runner
+    state: present
+    recreate: always
+  become: yes
