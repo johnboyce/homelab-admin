@@ -24,6 +24,7 @@ services:
     volumes:
       - /srv/homelab/forgejo-runner/data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker:ro
     networks:
       - geek-infra
 
