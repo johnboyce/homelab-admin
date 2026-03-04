@@ -1,7 +1,13 @@
 ---
 # ── Docker installation ───────────────────────────────────────────────────────
 
-- name: Install Docker packages
+- name: Check if Docker is already installed
+  command: docker --version
+  register: docker_check
+  failed_when: false
+  changed_when: false
+
+- name: Install Docker via docker.io package (if not already installed)
   apt:
     name:
       - docker.io
@@ -9,6 +15,7 @@
     state: present
     update_cache: yes
   become: yes
+  when: docker_check.rc != 0
 
 - name: Enable and start Docker service
   systemd:
