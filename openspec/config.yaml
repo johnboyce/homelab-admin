@@ -1,0 +1,36 @@
+schema: spec-driven
+
+# Project context
+context: |
+  Infrastructure: Self-hosted homelab on Ubuntu server (host: geek)
+  Tech stack: Docker, Docker Compose, Ansible, nginx, bash
+  Architecture: Microservices with shared infrastructure (postgres, nginx)
+  Network: Docker network 'geek-infra', internal .geek domains, public .johnnyblabs.com
+  Identity: Authentik SSO for unified authentication
+  Deployment: Ansible-based infrastructure-as-code from Mac to geek host
+  Security: Secrets in /etc/homelab/secrets/ (never in git), UFW firewall, TLS via acme.sh
+  Conventions:
+    - Container names: lowercase, hyphenated
+    - Volume paths: /srv/homelab/{service}/
+    - Docker network: geek-infra (external)
+    - Restart policy: unless-stopped
+    - Port registry: ansible/inventory/group_vars/all.yml (single source of truth)
+  Principles:
+    - Git is source of truth for configuration
+    - Idempotent operations (safe to run multiple times)
+    - No secrets in git (.env.example only)
+    - Changes must be reversible
+    - Clarity over cleverness
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Consider impact on all services (dependencies)
+    - Include rollback procedure
+    - Reference existing documentation
+    - Validate against security principles
+  tasks:
+    - Test in dry-run mode first (make ansible-dry-run)
+    - Validate with validation scripts
+    - Update documentation if patterns change
+    - Check for version compatibility

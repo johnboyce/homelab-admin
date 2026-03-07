@@ -20,6 +20,8 @@ services:
       FORGEJO__server__START_SSH_SERVER: "true"
       FORGEJO__service__DISABLE_REGISTRATION: "true"
       FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
+      FORGEJO__api__MAX_RESPONSE_ITEMS: "200"
+      FORGEJO__api__DEFAULT_PAGING_NUM: "100"
       FORGEJO__log__LEVEL: warn
     volumes:
       - /srv/homelab/forgejo/data:/data

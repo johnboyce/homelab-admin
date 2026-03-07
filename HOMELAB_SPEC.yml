@@ -1,0 +1,1486 @@
+d openapi: 3.1.0
+info:
+  title: Homelab Infrastructure Specification
+  version: 1.0.0
+  description: |
+    Infrastructure specification for the geek homelab platform.
+    
+    This spec defines:
+    - Service architecture patterns and standards
+    - Docker Compose configuration requirements
+    - Ansible role expectations
+    - nginx configuration patterns
+    - Security and networking standards
+    - Version management and update policies
+    
+    Purpose: Validation, consistency checking, documentation, and best practices enforcement.
+  contact:
+    name: Homelab Admin
+    url: https://github.com/johnboyce/homelab-admin
+  license:
+    name: Private
+
+servers:
+  - url: https://geek.local
+    description: geek host (Ubuntu server)
+
+tags:
+  - name: infrastructure
+    description: Core infrastructure services (nginx, postgres, docker network)
+  - name: identity
+    description: Authentication and SSO services (Authentik)
+  - name: applications
+    description: User-facing applications (BookStack, Forgejo, etc.)
+  - name: automation
+    description: CI/CD and automation services (Woodpecker)
+  - name: network
+    description: Network services (Pi-hole, Cloudflare DDNS)
+  - name: security
+    description: Security services (Vaultwarden, firewall)
+
+components:
+  schemas:
+    # Core service definition
+    ServiceDefinition:
+      type: object
+      required:
+        - name
+        - category
+        - docker_compose_path
+        - ansible_role
+        - network
+        - version_policy
+      properties:
+        name:
+          type: string
+          description: Service identifier (lowercase, hyphenated)
+          pattern: '^[a-z0-9-]+$'
+        display_name:
+          type: string
+          description: Human-readable service name
+        category:
+          type: string
+          enum: [infrastructure, identity, applications, automation, network, security, data]
+        description:
+          type: string
+          description: Brief description of service purpose
+        docker_compose_path:
+          type: string
+          description: Path relative to repo root
+          pattern: '^platform/[a-z0-9-]+/docker-compose\.yml$'
+        ansible_role:
+          type: string
+          description: Ansible role name managing this service
+        network:
+          type: string
+          description: Docker network name
+          default: geek-infra
+        version_policy:
+          $ref: '#/components/schemas/VersionPolicy'
+        ports:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortMapping'
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomainConfig'
+        dependencies:
+          type: array
+          items:
+            type: string
+          description: Other services this service depends on
+        secrets:
+          $ref: '#/components/schemas/SecretsConfig'
+        volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumeMount'
+        health_check:
+          $ref: '#/components/schemas/HealthCheck'
+        backup_required:
+          type: boolean
+          description: Whether this service requires backup strategy
+        documentation_links:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    # Version management policy
+    VersionPolicy:
+      type: object
+      required:
+        - strategy
+        - current_version
+      properties:
+        strategy:
+          type: string
+          enum: [pinned, latest, latest-stable, major-pinned, rolling]
+          description: |
+            - pinned: Specific version tag (e.g., "16.2.1")
+            - latest: Use :latest tag
+            - latest-stable: Use latest stable release tag
+            - major-pinned: Pin to major version (e.g., "16")
+            - rolling: Follow rolling release tag
+        current_version:
+          type: string
+          description: Current deployed version or tag
+        update_schedule:
+          type: string
+          enum: [manual, monthly, quarterly, security-only]
+        upstream_source:
+          type: string
+          format: uri
+          description: URL to check for latest versions
+        last_checked:
+          type: string
+          format: date
+          description: Last time version was checked
+        last_updated:
+          type: string
+          format: date
+          description: Last time service was updated
+        notes:
+          type: string
+          description: Version-specific notes or breaking changes
+
+    # Port mapping configuration
+    PortMapping:
+      type: object
+      required:
+        - container_port
+        - purpose
+      properties:
+        host_port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: Port exposed on host (null if not exposed)
+        container_port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: Port inside container
+        protocol:
+          type: string
+          enum: [tcp, udp]
+          default: tcp
+        purpose:
+          type: string
+          description: What this port is used for
+        access_scope:
+          type: string
+          enum: [public, lan, docker-network, localhost]
+          description: Network scope of access
+        firewall_rule:
+          type: boolean
+          description: Whether UFW rule is required
+
+    # Domain and routing configuration
+    DomainConfig:
+      type: object
+      required:
+        - fqdn
+        - type
+      properties:
+        fqdn:
+          type: string
+          format: hostname
+          description: Fully qualified domain name
+        type:
+          type: string
+          enum: [internal, public]
+          description: Internal (.geek) or public (.johnnyblabs.com)
+        protocol:
+          type: string
+          enum: [http, https]
+        nginx_config:
+          type: string
+          description: Path to nginx conf file in repo
+        tls_certificate:
+          type: string
+          description: Certificate name (if HTTPS)
+        authentik_protected:
+          type: boolean
+          description: Whether this domain requires Authentik authentication
+
+    # Secrets management
+    SecretsConfig:
+      type: object
+      required:
+        - env_file_path
+        - required_vars
+      properties:
+        env_file_path:
+          type: string
+          description: Path to secrets file on host
+          pattern: '^/etc/homelab/secrets/[a-z0-9-]+\.env$'
+        required_vars:
+          type: array
+          items:
+            type: string
+          description: List of required environment variables
+        example_file:
+          type: string
+          description: Path to .env.example in repo
+        rotation_required:
+          type: boolean
+          description: Whether secrets should be rotated periodically
+
+    # Volume mount
+    VolumeMount:
+      type: object
+      required:
+        - host_path
+        - container_path
+      properties:
+        host_path:
+          type: string
+          pattern: '^/srv/homelab/[a-z0-9-]+/'
+          description: Path on host system
+        container_path:
+          type: string
+          description: Path inside container
+        mode:
+          type: string
+          enum: [ro, rw]
+          default: rw
+        backup_required:
+          type: boolean
+          description: Whether this volume needs backup
+
+    # Health check definition
+    HealthCheck:
+      type: object
+      required:
+        - method
+      properties:
+        method:
+          type: string
+          enum: [http, container-status, tcp-socket, command]
+        endpoint:
+          type: string
+          description: HTTP endpoint for health check
+        expected_status:
+          type: integer
+          default: 200
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 10
+        ansible_check:
+          type: string
+          description: Ansible module used for health check (uri, docker_container_info, etc.)
+
+    # Ansible role specification
+    AnsibleRole:
+      type: object
+      required:
+        - name
+        - path
+        - tasks_complete
+      properties:
+        name:
+          type: string
+          pattern: '^[a-z0-9_]+$'
+        path:
+          type: string
+          pattern: '^ansible/roles/[a-z0-9_]+/$'
+        tasks_complete:
+          type: boolean
+          description: Whether role tasks are fully implemented
+        handlers:
+          type: array
+          items:
+            type: string
+          description: List of handlers defined
+        tags:
+          type: array
+          items:
+            type: string
+          description: Ansible tags for selective execution
+        idempotent:
+          type: boolean
+          description: Whether role can be run multiple times safely
+        dependencies:
+          type: array
+          items:
+            type: string
+          description: Other roles that must run first
+
+    # nginx configuration spec
+    NginxConfig:
+      type: object
+      required:
+        - filename
+        - server_name
+        - upstream_target
+      properties:
+        filename:
+          type: string
+          pattern: '^\d{2}_[a-z0-9.-]+\.conf$'
+          description: Config file with numeric prefix
+        server_name:
+          type: string
+          description: nginx server_name directive value
+        upstream_target:
+          type: string
+          description: Backend container:port
+        ssl_enabled:
+          type: boolean
+        http_redirect:
+          type: boolean
+          description: Whether HTTP redirects to HTTPS
+        special_locations:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              purpose:
+                type: string
+        proxy_settings:
+          type: object
+          description: Special proxy configuration (websockets, large headers, etc.)
+
+    # Compliance check result
+    ComplianceCheck:
+      type: object
+      required:
+        - service
+        - check_type
+        - status
+      properties:
+        service:
+          type: string
+        check_type:
+          type: string
+          enum: [version, security, configuration, documentation, backup, secrets]
+        status:
+          type: string
+          enum: [pass, fail, warning, info]
+        message:
+          type: string
+        remediation:
+          type: string
+          description: How to fix if status is fail or warning
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+
+paths:
+  # This section documents the validation endpoints/checks
+  /validate/service/{serviceName}:
+    get:
+      summary: Validate a service configuration
+      description: |
+        Checks that a service adheres to homelab standards:
+        - Docker Compose syntax and patterns
+        - Ansible role completeness
+        - Version currency
+        - Security best practices
+        - Documentation coverage
+      tags: [validation]
+      parameters:
+        - name: serviceName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service validation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  checks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceCheck'
+
+  /validate/versions:
+    get:
+      summary: Check all service versions
+      description: |
+        Scans all docker-compose.yml files and reports:
+        - Current version deployed
+        - Latest available version
+        - Update recommendation
+        - Breaking changes to consider
+      tags: [validation]
+      responses:
+        '200':
+          description: Version check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        current_version:
+                          type: string
+                        latest_version:
+                          type: string
+                        update_available:
+                          type: boolean
+                        severity:
+                          type: string
+                          enum: [security, feature, patch]
+                        breaking_changes:
+                          type: boolean
+
+  /validate/security:
+    get:
+      summary: Security posture assessment
+      description: |
+        Checks security compliance:
+        - Secret files not committed
+        - TLS configuration
+        - Firewall rules
+        - Port exposure audit
+        - Container security (no privileged, proper user)
+      tags: [validation, security]
+      responses:
+        '200':
+          description: Security assessment results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overall_status:
+                    type: string
+                    enum: [secure, needs-attention, critical]
+                  checks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceCheck'
+
+  /validate/documentation:
+    get:
+      summary: Documentation coverage check
+      description: |
+        Ensures all services have:
+        - README or docs entry
+        - .env.example for secrets
+        - Ansible role documentation
+        - Recovery procedures
+      tags: [validation]
+      responses:
+        '200':
+          description: Documentation coverage results
+
+  /validate/ansible:
+    get:
+      summary: Ansible role validation
+      description: |
+        Validates Ansible roles:
+        - Idempotency (can run multiple times)
+        - Proper handlers
+        - Health checks implemented
+        - Tags properly used
+        - Dependencies declared
+      tags: [validation]
+      responses:
+        '200':
+          description: Ansible validation results
+
+# Service Registry - Complete inventory of all services
+x-service-registry:
+  nginx:
+    name: nginx
+    display_name: nginx Reverse Proxy
+    category: infrastructure
+    description: HTTP/HTTPS reverse proxy with TLS termination
+    docker_compose_path: platform/nginx/docker-compose.yml
+    ansible_role: nginx
+    network: geek-infra
+    version_policy:
+      strategy: major-pinned
+      current_version: "1.29.4"
+      update_schedule: quarterly
+      upstream_source: https://hub.docker.com/_/nginx
+      last_checked: "2026-03-04"
+      notes: "Pin to 1.x major version for stability"
+    ports:
+      - host_port: 80
+        container_port: 80
+        protocol: tcp
+        purpose: HTTP traffic
+        access_scope: public
+        firewall_rule: true
+      - host_port: 443
+        container_port: 443
+        protocol: tcp
+        purpose: HTTPS traffic
+        access_scope: public
+        firewall_rule: true
+    volumes:
+      - host_path: /etc/nginx-docker/nginx.conf
+        container_path: /etc/nginx/nginx.conf
+        mode: ro
+        backup_required: false
+      - host_path: /etc/nginx-docker/conf.d
+        container_path: /etc/nginx/conf.d
+        mode: ro
+        backup_required: false
+      - host_path: /etc/nginx-docker/certs
+        container_path: /etc/nginx/certs
+        mode: ro
+        backup_required: false
+    health_check:
+      method: http
+      endpoint: /healthz
+      expected_status: 200
+      ansible_check: uri
+    backup_required: false
+    documentation_links:
+      - "docs/TLS_CERTIFICATES.md"
+      - "platform/ingress/nginx/etc-nginx-docker/conf.d/README.md"
+
+  postgres:
+    name: postgres
+    display_name: PostgreSQL Database
+    category: data
+    description: Shared PostgreSQL database for multiple services
+    docker_compose_path: platform/postgres/docker-compose.yml
+    ansible_role: postgres
+    network: geek-infra
+    version_policy:
+      strategy: major-pinned
+      current_version: "16"
+      update_schedule: security-only
+      upstream_source: https://hub.docker.com/_/postgres
+      last_checked: "2026-03-04"
+      notes: "Pin to PostgreSQL 16.x for stability, upgrade major versions cautiously"
+    ports:
+      - container_port: 5432
+        protocol: tcp
+        purpose: PostgreSQL database connections
+        access_scope: docker-network
+        firewall_rule: false
+    secrets:
+      env_file_path: /etc/homelab/secrets/postgres.env
+      required_vars:
+        - POSTGRES_PASSWORD
+        - POSTGRES_USER
+        - POSTGRES_DB
+      example_file: platform/postgres/.env.example
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/postgres/pgdata
+        container_path: /var/lib/postgresql/data
+        backup_required: true
+    health_check:
+      method: command
+      ansible_check: docker_container_info
+    backup_required: true
+    documentation_links:
+      - "docs/BACKUP.md"
+
+  authentik:
+    name: authentik
+    display_name: Authentik SSO
+    category: identity
+    description: Identity provider and SSO platform
+    docker_compose_path: platform/authentik/docker-compose.yml
+    ansible_role: authentik
+    network: geek-infra
+    version_policy:
+      strategy: pinned
+      current_version: "2025.10.4"
+      update_schedule: manual
+      upstream_source: https://github.com/goauthentik/authentik/releases
+      last_checked: "2026-03-04"
+      notes: "Pin version and test thoroughly before upgrading (breaking changes common)"
+    ports:
+      - host_port: 9000
+        container_port: 9000
+        protocol: tcp
+        purpose: Authentik server HTTP
+        access_scope: docker-network
+        firewall_rule: false
+      - host_port: 9443
+        container_port: 9443
+        protocol: tcp
+        purpose: Authentik server HTTPS
+        access_scope: docker-network
+        firewall_rule: false
+    domains:
+      - fqdn: auth.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/11_auth.geek.conf
+      - fqdn: auth.johnnyblabs.com
+        type: public
+        protocol: https
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/10_auth.johnnyblabs.com.conf
+        tls_certificate: johnnyblabs.crt
+    dependencies:
+      - postgres
+    secrets:
+      env_file_path: /etc/homelab/secrets/authentik.env
+      required_vars:
+        - AUTHENTIK_SECRET_KEY
+        - AUTHENTIK_POSTGRESQL__PASSWORD
+        - AUTHENTIK_TOKEN
+      example_file: platform/authentik/.env.example
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/authentik/media
+        container_path: /media
+        backup_required: true
+      - host_path: /srv/homelab/authentik/custom-templates
+        container_path: /templates
+        backup_required: true
+    health_check:
+      method: http
+      endpoint: /
+      expected_status: 200
+      ansible_check: uri
+    backup_required: true
+    documentation_links:
+      - "AUTHENTIK_ENV_CONFIG.md"
+      - "AUTHENTIK_UPGRADE.md"
+
+  bookstack:
+    name: bookstack
+    display_name: BookStack Wiki
+    category: applications
+    description: Documentation and wiki platform
+    docker_compose_path: platform/bookstack/docker-compose.yml
+    ansible_role: bookstack
+    network: geek-infra
+    version_policy:
+      strategy: pinned
+      current_version: "25.12.7"
+      update_schedule: quarterly
+      upstream_source: https://hub.docker.com/r/linuxserver/bookstack
+      last_checked: "2026-03-04"
+      notes: "LinuxServer.io versioning: YY.MM.patch"
+    ports:
+      - container_port: 80
+        protocol: tcp
+        purpose: BookStack web interface
+        access_scope: docker-network
+        firewall_rule: false
+    domains:
+      - fqdn: bookstack.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/21_bookstack.geek.conf
+      - fqdn: bookstack.johnnyblabs.com
+        type: public
+        protocol: https
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/20_bookstack.johnnyblabs.com.conf
+        tls_certificate: johnnyblabs.crt
+        authentik_protected: true
+    dependencies:
+      - bookstack-db
+    secrets:
+      env_file_path: /etc/homelab/secrets/bookstack.env
+      required_vars:
+        - APP_KEY
+        - DB_PASSWORD
+        - MYSQL_PASSWORD
+        - MYSQL_ROOT_PASSWORD
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/bookstack/config
+        container_path: /config
+        backup_required: true
+      - host_path: /srv/homelab/bookstack/mysql
+        container_path: /config
+        backup_required: true
+    health_check:
+      method: http
+      endpoint: /
+      ansible_check: uri
+    backup_required: true
+    documentation_links:
+      - "docs/BOOKSTACK_INFRASTRUCTURE.md"
+
+  forgejo:
+    name: forgejo
+    display_name: Forgejo Git Service
+    category: applications
+    description: Self-hosted Git service (GitHub alternative)
+    docker_compose_path: platform/forgejo/docker-compose.yml
+    ansible_role: forgejo
+    network: geek-infra
+    version_policy:
+      strategy: major-pinned
+      current_version: "14"
+      update_schedule: quarterly
+      upstream_source: https://codeberg.org/forgejo/forgejo/releases
+      last_checked: "2026-03-04"
+      notes: "Major version 14 (rolling tag)"
+    ports:
+      - host_port: 222
+        container_port: 2222
+        protocol: tcp
+        purpose: Git SSH access
+        access_scope: lan
+        firewall_rule: true
+      - container_port: 3000
+        protocol: tcp
+        purpose: Forgejo web UI
+        access_scope: docker-network
+        firewall_rule: false
+    domains:
+      - fqdn: forgejo.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/12_forgejo.geek.conf
+    dependencies:
+      - postgres
+    secrets:
+      env_file_path: /etc/homelab/secrets/forgejo.env
+      required_vars:
+        - FORGEJO__database__PASSWD
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/forgejo/data
+        container_path: /data
+        backup_required: true
+    health_check:
+      method: container-status
+      ansible_check: docker_container_info
+    backup_required: true
+
+  woodpecker:
+    name: woodpecker
+    display_name: Woodpecker CI
+    category: automation
+    description: CI/CD automation integrated with Forgejo
+    docker_compose_path: platform/woodpecker/docker-compose.yml
+    ansible_role: woodpecker
+    network: geek-infra
+    version_policy:
+      strategy: latest
+      current_version: latest
+      update_schedule: monthly
+      upstream_source: https://hub.docker.com/r/woodpeckerci/woodpecker-server
+      last_checked: "2026-03-04"
+      notes: "Using latest tag, monitor for breaking changes"
+    ports:
+      - container_port: 8000
+        protocol: tcp
+        purpose: Woodpecker web UI
+        access_scope: docker-network
+      - container_port: 9000
+        protocol: tcp
+        purpose: Woodpecker gRPC
+        access_scope: docker-network
+    domains:
+      - fqdn: woodpecker.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/14_woodpecker.geek.conf
+    dependencies:
+      - forgejo
+    secrets:
+      env_file_path: /etc/homelab/secrets/woodpecker.env
+      required_vars:
+        - WOODPECKER_AGENT_SECRET
+        - WOODPECKER_FORGEJO_CLIENT
+        - WOODPECKER_FORGEJO_SECRET
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/woodpecker/agent
+        container_path: /etc/woodpecker
+        backup_required: false
+    health_check:
+      method: container-status
+      ansible_check: docker_container_info
+    backup_required: false
+
+  vaultwarden:
+    name: vaultwarden
+    display_name: Vaultwarden
+    category: security
+    description: Self-hosted Bitwarden-compatible password manager
+    docker_compose_path: platform/vaultwarden/docker-compose.yml
+    ansible_role: vaultwarden
+    network: geek-infra
+    version_policy:
+      strategy: latest
+      current_version: latest
+      update_schedule: monthly
+      upstream_source: https://hub.docker.com/r/vaultwarden/server
+      last_checked: "2026-03-04"
+      notes: "Security-critical service, monitor for CVEs"
+    ports:
+      - container_port: 80
+        protocol: tcp
+        purpose: Vaultwarden web interface
+        access_scope: docker-network
+    domains:
+      - fqdn: vaultwarden.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/15_vaultwarden.geek.conf
+      - fqdn: vaultwarden.johnnyblabs.com
+        type: public
+        protocol: https
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/22_vaultwarden.johnnyblabs.com.conf
+        tls_certificate: johnnyblabs.crt
+    secrets:
+      env_file_path: /etc/homelab/secrets/vaultwarden.env
+      required_vars:
+        - ADMIN_TOKEN
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/vaultwarden/data
+        container_path: /data
+        backup_required: true
+    health_check:
+      method: http
+      endpoint: /
+      ansible_check: uri
+    backup_required: true
+
+  pihole:
+    name: pihole
+    display_name: Pi-hole DNS
+    category: network
+    description: Network-wide ad blocking and DNS server
+    docker_compose_path: platform/pihole/docker-compose.yml
+    ansible_role: pihole
+    network: geek-infra
+    version_policy:
+      strategy: latest
+      current_version: latest
+      update_schedule: monthly
+      upstream_source: https://hub.docker.com/r/pihole/pihole
+      last_checked: "2026-03-04"
+    ports:
+      - host_port: 53
+        container_port: 53
+        protocol: tcp
+        purpose: DNS queries
+        access_scope: lan
+        firewall_rule: true
+      - host_port: 53
+        container_port: 53
+        protocol: udp
+        purpose: DNS queries
+        access_scope: lan
+        firewall_rule: true
+      - host_port: 8081
+        container_port: 80
+        protocol: tcp
+        purpose: Admin interface
+        access_scope: localhost
+        firewall_rule: false
+    domains:
+      - fqdn: pihole.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/31_pihole.geek.conf
+    secrets:
+      env_file_path: /etc/homelab/secrets/pihole.env
+      required_vars:
+        - WEBPASSWORD
+      rotation_required: false
+    volumes:
+      - host_path: /srv/homelab/pihole/etc-pihole
+        container_path: /etc/pihole
+        backup_required: true
+      - host_path: /srv/homelab/pihole/etc-dnsmasq.d
+        container_path: /etc/dnsmasq.d
+        backup_required: true
+    health_check:
+      method: tcp-socket
+      ansible_check: docker_container_info
+    backup_required: true
+
+  plane:
+    name: plane
+    display_name: Plane Project Management
+    category: applications
+    description: Open-source project management tool
+    docker_compose_path: platform/plane/docker-compose.yml
+    ansible_role: plane
+    network: geek-infra
+    version_policy:
+      strategy: latest
+      current_version: latest
+      update_schedule: monthly
+      upstream_source: https://hub.docker.com/r/makeplane/plane-backend
+      last_checked: "2026-03-04"
+      notes: "Community deployment, may have breaking changes"
+    ports:
+      - container_port: 8000
+        protocol: tcp
+        purpose: Plane API backend
+        access_scope: docker-network
+      - container_port: 3000
+        protocol: tcp
+        purpose: Plane frontend
+        access_scope: docker-network
+    domains:
+      - fqdn: plane.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/10_plane.geek.conf
+    dependencies:
+      - postgres
+      - plane-redis
+    secrets:
+      env_file_path: /etc/homelab/secrets/plane.env
+      required_vars:
+        - PLANE_SECRET_KEY
+        - PLANE_DB_PASSWORD
+      rotation_required: true
+    volumes:
+      - host_path: /srv/homelab/plane/data
+        container_path: /app/data
+        backup_required: true
+      - host_path: /srv/homelab/plane/redis
+        container_path: /data
+        backup_required: false
+    health_check:
+      method: container-status
+      ansible_check: docker_container_info
+    backup_required: true
+
+  cloudflare-ddns:
+    name: cloudflare-ddns
+    display_name: Cloudflare DDNS
+    category: network
+    description: Dynamic DNS updater for Cloudflare
+    docker_compose_path: platform/cloudflare-ddns/docker-compose.yml
+    ansible_role: cloudflare_ddns
+    network: geek-infra
+    version_policy:
+      strategy: latest
+      current_version: latest
+      update_schedule: quarterly
+      upstream_source: https://github.com/oznu/docker-cloudflare-ddns
+      last_checked: "2026-03-04"
+    ports: []
+    secrets:
+      env_file_path: /etc/homelab/secrets/cloudflare-ddns.env
+      required_vars:
+        - CLOUDFLARE_API_TOKEN
+        - ZONE
+        - SUBDOMAIN
+      rotation_required: false
+    health_check:
+      method: container-status
+      ansible_check: docker_container_info
+    backup_required: false
+
+  landing:
+    name: landing
+    display_name: Landing Page
+    category: applications
+    description: Simple landing page at johnnyblabs.com root
+    docker_compose_path: platform/landing/docker-compose.yml
+    ansible_role: landing
+    network: geek-infra
+    version_policy:
+      strategy: major-pinned
+      current_version: "1.29"
+      update_schedule: quarterly
+      upstream_source: https://hub.docker.com/_/nginx
+      notes: "Matches main nginx version"
+    ports:
+      - container_port: 80
+        protocol: tcp
+        purpose: Landing page HTTP
+        access_scope: docker-network
+    domains:
+      - fqdn: johnnyblabs.com
+        type: public
+        protocol: https
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/00_landing.johnnyblabs.com.conf
+        tls_certificate: johnnyblabs.crt
+    health_check:
+      method: http
+      endpoint: /
+      ansible_check: uri
+    backup_required: false
+
+# Standards and Best Practices
+x-standards:
+  docker-compose:
+    required_fields:
+      - services
+      - networks
+    service_standards:
+      - Field: container_name (required, lowercase, hyphenated)
+      - Field: restart (required, value: unless-stopped)
+      - Field: networks (required, contains: geek-infra)
+      - Field: env_file (for services with secrets, path: /etc/homelab/secrets/*.env)
+      - Field: image (required, prefer pinned versions over :latest)
+    network_standards:
+      - Name: geek-infra (required)
+      - Type: external (required)
+      - Purpose: All services communicate over this network
+    volume_standards:
+      - Host path: Must start with /srv/homelab/{service-name}/
+      - Container path: Service-specific, document in comments
+      - Backup: Tag volumes that need backup in this spec
+    security_standards:
+      - No hardcoded secrets in docker-compose.yml
+      - Use env_file for sensitive data
+      - Minimize port exposure (prefer docker-network only)
+      - No privileged containers unless absolutely required
+      - Run as non-root user when possible
+
+  ansible:
+    role_standards:
+      required_tasks:
+        - Check secrets file exists
+        - Fail if secrets missing with helpful error
+        - Ensure service is running with docker_compose_v2
+      optional_tasks:
+        - Create required directories
+        - Health check validation
+        - Pre-flight checks (ports, dependencies)
+      tags_required:
+        - Service name tag (e.g., 'nginx', 'authentik')
+        - lifecycle tag (for start/stop operations)
+        - config tag (for configuration changes)
+      idempotency:
+        - Roles must be idempotent (safe to run multiple times)
+        - Use state: present (not restarted or recreated)
+        - Check mode (--check) must work without changes to target
+      health_checks:
+        - Use meta: flush_handlers before health check
+        - HTTP checks require Host header for docker network
+        - Container-only services use docker_container_info
+      handlers:
+        - Name patterns: "Test {service}", "Reload {service}"
+        - Should not fail if container not running
+
+  nginx:
+    config_standards:
+      filename_pattern: '^\d{2}_[a-z0-9.-]+\.conf$'
+      filename_prefix_guide:
+        - "00-09: Base/default configurations"
+        - "10-19: Primary services (auth, main apps)"
+        - "20-29: Secondary services"
+        - "30-39: Network services"
+      location: platform/ingress/nginx/etc-nginx-docker/conf.d/
+      server_blocks:
+        internal_domains:
+          - TLD: .geek
+          - Protocol: HTTP only
+          - Purpose: LAN access
+        public_domains:
+          - TLD: .johnnyblabs.com
+          - Protocol: HTTPS with HTTP→HTTPS redirect
+          - Certificate: /etc/nginx/certs/johnnyblabs.crt
+      proxy_headers_required:
+        - proxy_set_header Host $host
+        - proxy_set_header X-Real-IP $remote_addr
+        - proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for
+        - proxy_set_header X-Forwarded-Proto (http|https)
+      websocket_support:
+        - proxy_http_version 1.1
+        - proxy_set_header Upgrade $http_upgrade
+        - proxy_set_header Connection "upgrade"
+
+  security:
+    principles:
+      - Principle of least privilege
+      - Default deny (firewall)
+      - Secret segregation (never commit to git)
+      - TLS everywhere (public domains)
+      - Regular secret rotation
+    secret_management:
+      location: /etc/homelab/secrets/
+      permissions:
+        files: "0644"
+        directory: "0755"
+      naming: "{service-name}.env"
+      git_policy: Never commit secrets, use .env.example only
+    certificate_management:
+      method: acme.sh with Cloudflare DNS-01
+      location: /etc/nginx-docker/certs/
+      permissions:
+        private_keys: "0600"
+        certificates: "0644"
+      renewal: Automatic via acme.sh cron
+    firewall:
+      tool: UFW (Uncomplicated Firewall)
+      default_policy: deny incoming, allow outgoing
+      lan_subnet: 192.168.1.0/24
+      public_ports: [22, 80, 443]
+      lan_only_ports: [53, 222, 9090, 11434, 5901]
+
+  documentation:
+    required_files:
+      root_level:
+        - README.md (architecture, quick start, workflows)
+        - ADMIN.md (principles, non-negotiables)
+        - CHECKLIST.md (progress tracking)
+      docs_directory:
+        - ANSIBLE_DEPLOYMENT.md (deployment workflows)
+        - FIREWALL.md (firewall rules and management)
+        - TLS_CERTIFICATES.md (certificate management)
+        - BOOKSTACK_INFRASTRUCTURE.md (service-specific docs)
+      service_level:
+        - .env.example (for services with secrets)
+        - README.md (service-specific guidance)
+    standards:
+      - Use Markdown format
+      - Include diagrams where helpful (mermaid or ASCII)
+      - Document both normal and emergency procedures
+      - Include troubleshooting sections
+      - Keep up to date with actual implementation
+
+  versioning:
+    docker_images:
+      preference_order:
+        1: "Pinned semantic version (e.g., postgres:16.2.1)"
+        2: "Major version pin (e.g., postgres:16)"
+        3: "Stable/LTS tag (e.g., ubuntu:22.04)"
+        4: "Latest tag (acceptable for non-critical services)"
+      avoid:
+        - Rolling tags without monitoring
+        - Unpinned tags for critical infrastructure
+      update_process:
+        1: Check release notes for breaking changes
+        2: Test in non-production if possible
+        3: Update docker-compose.yml with new version
+        4: Commit change with descriptive message
+        5: Deploy via Ansible
+        6: Verify health checks pass
+        7: Monitor logs for issues
+
+  backup:
+    strategy:
+      databases:
+        - Method: pg_dump for PostgreSQL
+        - Frequency: Daily
+        - Retention: 30 days
+        - Location: /srv/homelab/backups/
+      volumes:
+        - Method: rsync or tar
+        - Frequency: Weekly
+        - Retention: 4 weeks
+        - Location: /srv/homelab/backups/
+      configuration:
+        - Method: Git repository
+        - Frequency: On every change
+        - Retention: Indefinite (Git history)
+    restore_testing:
+      - Test restore procedure quarterly
+      - Document restore steps
+      - Verify backups are not corrupted
+
+# Validation Rules
+x-validation-rules:
+  critical:
+    - rule: no-secrets-in-git
+      description: No .env files (except .env.example), .key files, or hardcoded passwords in repository
+      check: Scan for common secret patterns in git-tracked files
+      severity: critical
+
+    - rule: all-services-have-ansible-role
+      description: Every docker-compose.yml must have corresponding Ansible role
+      check: Compare platform/* directories with ansible/roles/*
+      severity: high
+
+    - rule: secrets-file-exists
+      description: All services with env_file must have secrets file on host
+      check: Ansible role checks for file existence
+      severity: critical
+
+    - rule: pinned-versions-for-critical
+      description: Critical services (postgres, authentik, nginx) must use pinned versions
+      check: Parse docker-compose.yml image tags
+      severity: high
+
+    - rule: geek-infra-network
+      description: All services must use geek-infra external network
+      check: Parse docker-compose.yml networks section
+      severity: high
+
+  important:
+    - rule: health-checks-implemented
+      description: All Ansible roles should include health check tasks
+      check: Parse Ansible role tasks for health check patterns
+      severity: medium
+
+    - rule: nginx-config-for-web-services
+      description: Services with web UI must have nginx reverse proxy config
+      check: Match service domains with nginx conf.d/*.conf files
+      severity: medium
+
+    - rule: backup-strategy-documented
+      description: Services marked backup_required must have backup procedure
+      check: Cross-reference with docs/BACKUP.md or scripts/backup_*.sh
+      severity: medium
+
+    - rule: documentation-exists
+      description: Each service should have documentation (README, docs/, or inline comments)
+      check: Verify documentation files exist for each service
+      severity: medium
+
+    - rule: firewall-rules-match-ports
+      description: Exposed host ports must have corresponding UFW rules
+      check: Compare docker-compose port mappings with ansible/roles/firewall/tasks/main.yml
+      severity: high
+
+  recommended:
+    - rule: latest-versions-checked
+      description: Service versions should be checked within last 90 days
+      check: Compare last_checked dates in this spec
+      severity: low
+
+    - rule: environment-examples-exist
+      description: Services with secrets should have .env.example file
+      check: Verify .env.example exists in service directory
+      severity: low
+
+    - rule: consistent-naming
+      description: Container names should match service names (with optional prefix)
+      check: Parse docker-compose.yml container_name fields
+      severity: low
+
+    - rule: restart-policy
+      description: All services should have restart policy (unless-stopped or always)
+      check: Parse docker-compose.yml restart fields
+      severity: low
+
+# Implementation Checklist Generator
+x-improvement-checklist:
+  version-updates:
+    description: Check and update service versions
+    tasks:
+      - task: Audit current versions
+        command: grep -r "image:" platform/*/docker-compose.yml
+        automated: false
+
+      - task: Check for security vulnerabilities
+        command: Run CVE scanning on current image versions
+        automated: true
+        tool: validate_cves
+
+      - task: Review release notes
+        description: For each service, check upstream release notes for breaking changes
+        automated: false
+
+      - task: Update docker-compose.yml files
+        description: Update image tags with new versions
+        automated: false
+
+      - task: Update this spec
+        description: Update version_policy.current_version and last_checked dates
+        automated: false
+
+      - task: Deploy and verify
+        command: make ansible-apply && make homelab-status-verbose
+        automated: false
+
+  documentation-audit:
+    description: Ensure all services are properly documented
+    tasks:
+      - task: Check for missing .env.example files
+        automated: true
+
+      - task: Verify each service has docs
+        automated: true
+
+      - task: Update README.md with any new services
+        automated: false
+
+      - task: Document backup procedures
+        description: Ensure BACKUP.md covers all backup_required services
+        automated: false
+
+      - task: Create service-specific troubleshooting guides
+        automated: false
+
+  security-hardening:
+    description: Review and improve security posture
+    tasks:
+      - task: Audit port exposure
+        description: Verify only necessary ports exposed to host
+        automated: true
+
+      - task: Review firewall rules
+        command: sudo ufw status numbered
+        automated: false
+
+      - task: Check for hardcoded secrets
+        command: grep -r "password\|secret\|token" platform/ --exclude=".env.example"
+        automated: true
+
+      - task: Verify TLS certificate expiration
+        command: openssl x509 -in /etc/nginx-docker/certs/johnnyblabs.crt -noout -enddate
+        automated: false
+
+      - task: Review container user permissions
+        description: Check that containers don't run as root unnecessarily
+        automated: false
+
+      - task: Rotate secrets
+        description: Follow rotation schedule for critical secrets
+        automated: false
+
+  ansible-improvements:
+    description: Enhance Ansible automation
+    tasks:
+      - task: Test idempotency
+        command: make ansible-apply && make ansible-apply
+        description: Second run should have changed=0
+        automated: false
+
+      - task: Verify all roles have health checks
+        automated: true
+
+      - task: Add missing handlers
+        description: Ensure reload/restart handlers exist where needed
+        automated: false
+
+      - task: Implement Ansible Vault
+        description: Consider using Ansible Vault for secret management
+        automated: false
+        priority: low
+
+      - task: Add pre-flight checks
+        description: Validate prerequisites before service deployment
+        automated: false
+
+  consistency-fixes:
+    description: Ensure patterns are consistent across services
+    tasks:
+      - task: Standardize container naming
+        description: Ensure all containers follow naming convention
+        automated: true
+
+      - task: Verify network configuration
+        description: All services should use geek-infra external network
+        automated: true
+
+      - task: Standardize volume paths
+        description: All should use /srv/homelab/{service}/ pattern
+        automated: true
+
+      - task: Align Ansible role structure
+        description: Ensure all roles follow same task/handler pattern
+        automated: false
+
+      - task: Update port registry
+        description: Ensure group_vars/all.yml includes all services
+        automated: false
+
+# Current State Assessment (as of 2026-03-04)
+x-current-state:
+  overall_health: operational
+  services_deployed: 12
+  services_managed_by_ansible: 12
+  ansible_migration_complete: true
+  consolidation_complete: true
+
+  strengths:
+    - Well-structured repository with clear organization
+    - Strong documentation culture (multiple .md files)
+    - Ansible automation in place for all services
+    - Port registry provides single source of truth
+    - Security-conscious (no secrets in git, firewall configured)
+    - Version control for nginx configuration
+    - Clear separation between internal and public domains
+
+  areas_for_improvement:
+    - Some services using :latest tag (vaultwarden, pihole, woodpecker)
+    - Version checking not automated
+    - Backup automation incomplete
+    - Health monitoring is manual (no alerting)
+    - Documentation gaps (some services lack .env.example)
+    - Certificate expiration monitoring not automated
+    - No CI/CD pipeline for validation
+    - Disaster recovery playbook incomplete
+
+  immediate_priorities:
+    - Pin versions for critical services using :latest
+    - Create missing .env.example files
+    - Implement automated version checking
+    - Complete backup automation
+    - Add certificate expiration monitoring
+
+  technical_debt:
+    - Redis container (no longer needed by Authentik, evaluate for removal)
+    - Old geek-infra directory (can be archived after verification)
+    - Some nginx configs may have duplicate patterns
+    - No centralized logging or metrics collection
+
+# Version Matrix - Current vs Latest Available
+x-version-matrix:
+  # This section should be updated regularly
+  last_updated: "2026-03-04"
+  notes: "Manual version check needed, consider automation"
+
+  services:
+    nginx:
+      current: "1.29.4"
+      latest_stable: "Check: https://nginx.org/en/CHANGES"
+      update_recommended: false
+
+    postgres:
+      current: "16"
+      latest_major: "Check: https://www.postgresql.org/support/versioning/"
+      latest_16_x: "16.2"
+      update_recommended: true
+      notes: "Consider updating to 16.2 for latest patches"
+
+    authentik:
+      current: "2025.10.4"
+      latest: "Check: https://github.com/goauthentik/authentik/releases"
+      update_recommended: false
+      notes: "Recently upgraded, monitor for issues"
+
+    bookstack:
+      current: "25.12.7"
+      latest: "Check: https://www.bookstackapp.com/blog/"
+      update_recommended: false
+      notes: "LinuxServer.io builds, check their repo"
+
+    forgejo:
+      current: "14"
+      latest: "Check: https://codeberg.org/forgejo/forgejo/releases"
+      update_recommended: false
+      notes: "Using major version tag, auto-updates within v14"
+
+    vaultwarden:
+      current: "latest"
+      latest: "Check: https://github.com/dani-garcia/vaultwarden/releases"
+      update_recommended: true
+      notes: "Should pin to specific version for security-critical service"
+
+    pihole:
+      current: "latest"
+      latest: "Check: https://github.com/pi-hole/docker-pi-hole/releases"
+      update_recommended: true
+      notes: "Should pin to specific version or use version tag"
+
+    woodpecker:
+      current: "latest"
+      latest: "Check: https://github.com/woodpecker-ci/woodpecker/releases"
+      update_recommended: true
+      notes: "Should pin to major or specific version"
+
+    plane:
+      current: "latest"
+      latest: "Check: https://github.com/makeplane/plane/releases"
+      update_recommended: true
+      notes: "Community deployment, high risk with latest tag"
+

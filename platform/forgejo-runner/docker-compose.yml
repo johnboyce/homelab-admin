@@ -1,6 +1,6 @@
 services:
   forgejo-runner:
-    image: code.forgejo.org/forgejo/runner:6
+    image: code.forgejo.org/forgejo/runner:12
     container_name: forgejo-runner
     restart: unless-stopped
     env_file: /etc/homelab/secrets/forgejo-runner.env
