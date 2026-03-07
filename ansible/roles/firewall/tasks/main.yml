@@ -109,7 +109,7 @@
   become: yes
   loop:
     - { key: firewall, value: "true" }
-    - { key: firewall_managed_since, value: "{{ ansible_date_time.iso8601 }}" }
+    - { key: firewall_managed_since, value: "{{ ansible_facts['date_time'].iso8601 }}" }
   tags: [firewall, bootstrap, config]
 
 - name: Display final firewall status

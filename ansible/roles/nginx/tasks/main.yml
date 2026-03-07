@@ -79,5 +79,5 @@
   become: yes
   loop:
     - { key: nginx, value: "true" }
-    - { key: nginx_managed_since, value: "{{ ansible_date_time.iso8601 }}" }
+    - { key: nginx_managed_since, value: "{{ ansible_facts['date_time'].iso8601 }}" }
   tags: [nginx, config]
