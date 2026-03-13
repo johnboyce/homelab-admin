@@ -124,6 +124,18 @@
   become: yes
   tags: [magicmirror, kiosk]
 
+- name: Enable GDM3 autologin for johnb (kiosk requires active X session)
+  blockinfile:
+    path: /etc/gdm3/custom.conf
+    marker: "# {mark} ANSIBLE MANAGED — autologin"
+    insertafter: '^\[daemon\]'
+    block: |
+      AutomaticLoginEnable = true
+      AutomaticLogin = johnb
+  become: yes
+  notify: Restart GDM
+  tags: [magicmirror, kiosk]
+
 # --- Host-level: Kiosk autostart ---
 
 - name: Ensure johnb autostart directory exists
