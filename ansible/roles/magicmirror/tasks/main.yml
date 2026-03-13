@@ -138,10 +138,23 @@
 
 # --- Host-level: Kiosk autostart ---
 
-- name: Ensure johnb autostart directory exists
+- name: Ensure johnb autostart and local bin directories exist
   file:
-    path: /home/johnb/.config/autostart
+    path: "{{ item }}"
     state: directory
+    owner: johnb
+    group: johnb
+    mode: '0755'
+  become: yes
+  loop:
+    - /home/johnb/.config/autostart
+    - /home/johnb/.local/bin
+  tags: [magicmirror, kiosk]
+
+- name: Deploy kiosk wrapper script
+  copy:
+    src: magicmirror-kiosk.sh
+    dest: /home/johnb/.local/bin/magicmirror-kiosk.sh
     owner: johnb
     group: johnb
     mode: '0755'
