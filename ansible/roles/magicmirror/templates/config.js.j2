@@ -4,7 +4,7 @@
  * will be overwritten on next Ansible run. Edit the template instead.
  *
  * Weather locations:
- *   - Wayne, PA (zip 19342): lat 39.8962 / lon -75.5288 [imperial]
+ *   - Glen Mills, PA (zip 19342): lat 39.8956 / lon -75.4952 [imperial]
  *   - Letterkenny, Donegal, Ireland: lat 54.9558 / lon -7.7342 [metric]
  * Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance — no API key)
  * News: BBC World + The Guardian (world) | NBC Philadelphia + 6ABC (local)
@@ -39,13 +39,13 @@ let config = {
         {
             module: "weather",
             position: "top_right",
-            header: "Wayne, PA",
+            header: "Glen Mills, PA",
             config: {
                 weatherProvider: "openweathermap",
                 type: "current",
                 units: "imperial",
-                lat: 39.8962,
-                lon: -75.5288,
+                lat: 39.8956,
+                lon: -75.4952,
                 apiKey: "{{ openweathermap_api_key }}",
                 showWindDirection: true,
                 showWindDirectionAsArrow: true,
@@ -58,13 +58,13 @@ let config = {
         {
             module: "weather",
             position: "top_right",
-            header: "Wayne, PA — Forecast",
+            header: "Glen Mills, PA — Forecast",
             config: {
                 weatherProvider: "openweathermap",
                 type: "forecast",
                 units: "imperial",
-                lat: 39.8962,
-                lon: -75.5288,
+                lat: 39.8956,
+                lon: -75.4952,
                 apiKey: "{{ openweathermap_api_key }}",
                 maxNumberOfDays: 5,
                 showRainAmount: true,
