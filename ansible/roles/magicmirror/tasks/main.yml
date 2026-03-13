@@ -84,21 +84,24 @@
     msg: "MagicMirror container state: {{ magicmirror_info.container.State.Status | default('not found') }}"
   tags: [magicmirror, lifecycle]
 
-- name: Clone MMM-Stocks module to host volume (Yahoo Finance, no API key)
-  git:
-    repo: https://github.com/jalibu/MMM-Stocks.git
-    dest: /srv/homelab/magicmirror/modules/MMM-Stocks
-    update: no
+- name: Download MMM-Jast module tarball (Yahoo Finance stocks, no API key)
+  shell: |
+    curl -fsSL https://github.com/jalibu/MMM-Jast/archive/refs/heads/main.tar.gz \
+      | tar -xz -C /srv/homelab/magicmirror/modules/ && \
+    mv /srv/homelab/magicmirror/modules/MMM-Jast-main \
+       /srv/homelab/magicmirror/modules/MMM-Jast
+  args:
+    creates: /srv/homelab/magicmirror/modules/MMM-Jast/package.json
   become: yes
-  register: mmm_stocks_cloned
+  register: mmm_jast_downloaded
   tags: [magicmirror, modules]
 
-- name: Install MMM-Stocks npm dependencies inside container
+- name: Install MMM-Jast npm dependencies inside container
   shell: >
     docker exec --user root geek-magicmirror
-    sh -c 'cd /home/node/MagicMirror/modules/MMM-Stocks && npm install --production'
+    sh -c 'cd /home/node/MagicMirror/modules/MMM-Jast && npm install --production'
   become: yes
-  when: mmm_stocks_cloned.changed
+  when: mmm_jast_downloaded.changed
   tags: [magicmirror, modules]
 
 # --- Host-level: X11 session (required for xset dpms) ---

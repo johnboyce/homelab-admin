@@ -107,16 +107,23 @@ let config = {
             }
         },
 
-        /* ── Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance) ── */
+        /* ── Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance via MMM-Jast) ── */
         {
-            module: "MMM-Stocks",
+            module: "MMM-Jast",
             position: "bottom_bar",
+            header: "Markets",
             config: {
-                stocks: "LMT,CMCSA,AAPL,NVDA",
+                stocks: [
+                    { name: "Lockheed",  symbol: "LMT"   },
+                    { name: "Comcast",   symbol: "CMCSA" },
+                    { name: "Apple",     symbol: "AAPL"  },
+                    { name: "NVIDIA",    symbol: "NVDA"  },
+                ],
                 updateInterval: 300000,   /* 5 minutes */
                 showChange: true,
                 showChangePercent: true,
                 currencyStyle: "symbol",
+                fadeSpeed: 1000,
             }
         },
 
