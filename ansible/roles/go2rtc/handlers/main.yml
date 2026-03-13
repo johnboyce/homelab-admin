@@ -1,0 +1,7 @@
+---
+- name: Restart go2rtc
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/go2rtc
+    state: present
+    recreate: always
+  become: yes

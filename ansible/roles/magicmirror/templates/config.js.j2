@@ -7,6 +7,7 @@
  *   - Glen Mills, PA (zip 19342): lat 39.8956 / lon -75.4952 [imperial]
  *   - Letterkenny, Donegal, Ireland: lat 54.9558 / lon -7.7342 [metric]
  * Background: MMM-Wallpaper (bing daily — change source to "local" for Ireland images)
+ * Cameras: Eufy S380 snapshots via go2rtc (Backyard, Breezeway, Garage)
  * Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance — no API key)
  * News: BBC World + The Guardian (world) | NBC Philadelphia + 6ABC (local)
  */
@@ -125,6 +126,24 @@ let config = {
                 apiKey: "{{ openweathermap_api_key }}",
                 maxNumberOfDays: 3,
                 showRainAmount: true,
+            }
+        },
+
+        /* ── Security Cameras: Eufy S380 snapshots via go2rtc ── */
+        {
+            module: "MMM-CameraSnapshots",
+            position: "middle_center",
+            header: "Security Cameras",
+            config: {
+                cameras: [
+                    { name: "Backyard",   url: "http://go2rtc.geek/api/frame.jpeg?src=backyard" },
+                    { name: "Breezeway",  url: "http://go2rtc.geek/api/frame.jpeg?src=breezeway" },
+                    { name: "Garage",     url: "http://go2rtc.geek/api/frame.jpeg?src=garage" },
+                ],
+                rotateInterval: 30000,    /* show each camera for 30 seconds */
+                refreshInterval: 15000,   /* refresh snapshot every 15 seconds */
+                width: "480px",
+                height: "360px",
             }
         },
 

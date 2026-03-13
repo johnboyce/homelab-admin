@@ -9,6 +9,7 @@ services:
       - /srv/homelab/magicmirror/config:/opt/magic_mirror/config
       - /srv/homelab/magicmirror/modules/MMM-Jast:/opt/magic_mirror/modules/MMM-Jast
       - /srv/homelab/magicmirror/modules/MMM-Wallpaper:/opt/magic_mirror/modules/MMM-Wallpaper
+      - /srv/homelab/magicmirror/modules/MMM-CameraSnapshots:/opt/magic_mirror/modules/MMM-CameraSnapshots
       - /srv/homelab/magicmirror/css/custom.css:/opt/magic_mirror/css/custom.css
     networks:
       - geek-infra

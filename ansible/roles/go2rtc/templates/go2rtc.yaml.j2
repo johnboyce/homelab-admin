@@ -1,0 +1,22 @@
+# go2rtc configuration — managed by Ansible (go2rtc role)
+# Source: ansible/roles/go2rtc/templates/go2rtc.yaml.j2
+# DO NOT edit /srv/homelab/go2rtc/config/go2rtc.yaml directly.
+
+api:
+  listen: ":1984"
+
+# Disable RTSP and WebRTC servers — only HTTP snapshot API needed
+rtsp:
+  listen: ""
+webrtc:
+  listen: ""
+
+# Eufy S380 HomeBase cameras (battery/solar — stream on motion only)
+# Snapshot API: GET /api/frame.jpeg?src=<stream_name>
+streams:
+  backyard:
+    - {{ go2rtc_cam_backyard }}
+  breezeway:
+    - {{ go2rtc_cam_breezeway }}
+  garage:
+    - {{ go2rtc_cam_garage }}

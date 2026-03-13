@@ -43,5 +43,7 @@
       tags: [vaultwarden, lifecycle]
     - role: forgejo_runner
       tags: [forgejo-runner, lifecycle]
+    - role: go2rtc
+      tags: [go2rtc, lifecycle]
     - role: magicmirror
       tags: [magicmirror, lifecycle]

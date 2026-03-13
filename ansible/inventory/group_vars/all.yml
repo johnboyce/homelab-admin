@@ -28,6 +28,8 @@ services:
     port: 80
   magicmirror:
     port: 8080
+  go2rtc:
+    api_port: 1984
 
 # Network Topology
 network:
