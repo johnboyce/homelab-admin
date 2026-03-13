@@ -7,8 +7,10 @@
   become: yes
 
 - name: Reload user systemd
-  command: >
-    sudo -u johnb
-    XDG_RUNTIME_DIR=/run/user/{{ ansible_user_uid }}
-    systemctl --user daemon-reload
+  shell: |
+    uid=$(id -u johnb)
+    sudo -u johnb \
+      XDG_RUNTIME_DIR=/run/user/$uid \
+      DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus \
+      systemctl --user daemon-reload
   become: yes
