@@ -158,6 +158,16 @@
   become: yes
   tags: [magicmirror, kiosk]
 
+- name: Deploy display no-blank autostart entry
+  copy:
+    src: display-noblank.desktop
+    dest: /home/johnb/.config/autostart/display-noblank.desktop
+    owner: johnb
+    group: johnb
+    mode: '0644'
+  become: yes
+  tags: [magicmirror, kiosk]
+
 # --- Host-level: systemd user timers for display wake/sleep ---
 
 - name: Ensure johnb systemd user directory exists
