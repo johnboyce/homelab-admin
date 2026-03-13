@@ -379,6 +379,63 @@ Complete inventory of all services deployed in the homelab infrastructure with t
 
 ---
 
+### MagicMirror² (Morning Dashboard)
+
+**Status:** ✅ Production
+**Category:** Applications
+**Location:** `platform/magicmirror/docker-compose.yml`
+**Ansible Role:** `ansible/roles/magicmirror/`
+
+**Current Configuration:**
+- Image: `karsten13/magicmirror:latest`
+- Container: `geek-magicmirror`
+- Port: 8080 (docker-network only)
+- Network: `geek-infra`
+- Config: `/srv/homelab/magicmirror/config` (Ansible-managed, template)
+- Modules: `/srv/homelab/magicmirror/modules`
+
+**Dependencies:** None
+
+**Domains:**
+- Internal: `magicmirror.geek` (HTTP, LAN only)
+
+**Secrets:**
+- File: `/etc/homelab/secrets/magicmirror.env`
+- Required: `OPENWEATHERMAP_API_KEY`
+- Key source: https://openweathermap.org (free tier)
+
+**Modules:**
+- `clock` — 12-hour format with date
+- `weather` (×4) — Wayne PA 19342 (imperial, current + 5-day) + Letterkenny Ireland (metric, current + 3-day)
+- `MMM-Jast` — Yahoo Finance stocks: LMT, CMCSA, AAPL, NVDA (no API key)
+- `newsfeed` (×2) — World (BBC + Reuters) + Local (Philly Inquirer + 6ABC)
+
+**Kiosk & Display:**
+- Chromium `--kiosk` launched via XDG autostart (`~/.config/autostart/magicmirror-kiosk.desktop`)
+- Display wake: `magicmirror-wake.timer` → 07:00 daily (`xset dpms force on`)
+- Display sleep: `magicmirror-sleep.timer` → 09:00 daily (`xset dpms force off`)
+- GDM3 Wayland disabled (X11 required for `xset dpms`)
+- `loginctl enable-linger johnb` ensures timers survive logout
+
+**Version Policy:**
+- Strategy: Latest (acceptable for dashboard)
+- Update schedule: Monthly
+- Last checked: 2026-03-13
+- Upstream: https://hub.docker.com/r/karsten13/magicmirror
+
+**Compliance:**
+- ⚠️  Using :latest (non-critical dashboard service)
+- ✅ Ansible managed
+- ✅ .env.example exists
+- ✅ No backup needed (config in git via Ansible template)
+- ✅ Health check: HTTP 200 at `http://magicmirror.geek/`
+
+**Next Actions:**
+- Physical verification: confirm kiosk autostart at 07:00 with active X session
+- Consider pinning to a specific version if stability issues arise
+
+---
+
 ### Plane (Project Management)
 
 **Status:** ✅ Production
@@ -569,6 +626,7 @@ Complete inventory of all services deployed in the homelab infrastructure with t
 ├─────────────────────────────────────────────────────┤
 │ • bookstack (depends on: bookstack-db, authentik)   │
 │ • forgejo (depends on: postgres)                    │
+│ • magicmirror (independent)                         │
 │ • plane (depends on: postgres, plane-redis)         │
 │ • vaultwarden (independent)                         │
 └─────────────────────────────────────────────────────┘
@@ -595,6 +653,7 @@ Complete inventory of all services deployed in the homelab infrastructure with t
 | plane | Container status | - | ✅ |
 | pihole | Container status | - | ✅ |
 | cloudflare-ddns | Container status | - | ✅ |
+| magicmirror | HTTP | http://magicmirror.geek/ | ✅ |
 | landing | HTTP | https://johnnyblabs.com/ | ✅ |
 
 ## Version Summary
@@ -611,6 +670,7 @@ Complete inventory of all services deployed in the homelab infrastructure with t
 | plane | latest | latest ⚠️ | ⚠️  Should pin |
 | pihole | latest | latest ⚠️ | ⚠️  Should pin |
 | cloudflare-ddns | latest | latest | ✅ Acceptable |
+| magicmirror | latest | latest | ✅ Acceptable (dashboard) |
 | landing | 1.29 | matches nginx | ✅ Current |
 
 ## Compliance Summary

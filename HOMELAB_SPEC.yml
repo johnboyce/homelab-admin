@@ -984,6 +984,52 @@ x-service-registry:
       ansible_check: docker_container_info
     backup_required: false
 
+  magicmirror:
+    name: magicmirror
+    display_name: MagicMirror² Dashboard
+    category: applications
+    description: Morning dashboard with weather, stocks, and news displayed in Chromium kiosk mode
+    docker_compose_path: platform/magicmirror/docker-compose.yml
+    ansible_role: magicmirror
+    network: geek-infra
+    version_policy:
+      strategy: latest
+      current_version: latest
+      update_schedule: monthly
+      upstream_source: https://hub.docker.com/r/karsten13/magicmirror
+      last_checked: "2026-03-13"
+      notes: "Morning dashboard — karsten13/magicmirror image. Modules: MMM-Jast (Yahoo Finance), newsfeed (BBC/Reuters/Inquirer/6ABC), weather (OpenWeatherMap)"
+    ports:
+      - container_port: 8080
+        protocol: tcp
+        purpose: MagicMirror web UI
+        access_scope: docker-network
+        firewall_rule: false
+    domains:
+      - fqdn: magicmirror.geek
+        type: internal
+        protocol: http
+        nginx_config: platform/ingress/nginx/etc-nginx-docker/conf.d/35_magicmirror.geek.conf
+    secrets:
+      env_file_path: /etc/homelab/secrets/magicmirror.env
+      required_vars:
+        - OPENWEATHERMAP_API_KEY
+      example_file: platform/magicmirror/.env.example
+      rotation_required: false
+    volumes:
+      - host_path: /srv/homelab/magicmirror/config
+        container_path: /home/node/MagicMirror/config
+        backup_required: false
+      - host_path: /srv/homelab/magicmirror/modules
+        container_path: /home/node/MagicMirror/modules
+        backup_required: false
+    health_check:
+      method: http
+      endpoint: /
+      expected_status: 200
+      ansible_check: uri
+    backup_required: false
+
   landing:
     name: landing
     display_name: Landing Page
@@ -1386,8 +1432,8 @@ x-improvement-checklist:
 # Current State Assessment (as of 2026-03-04)
 x-current-state:
   overall_health: operational
-  services_deployed: 12
-  services_managed_by_ansible: 12
+  services_deployed: 13
+  services_managed_by_ansible: 13
   ansible_migration_complete: true
   consolidation_complete: true
 
@@ -1495,4 +1541,10 @@ x-version-matrix:
       latest: "Check: https://github.com/makeplane/plane/releases"
       update_recommended: true
       notes: "Official community CLI deployment; alignment tracked in CHG-2026-002"
+
+    magicmirror:
+      current: "latest"
+      latest: "Check: https://hub.docker.com/r/karsten13/magicmirror"
+      update_recommended: false
+      notes: "Morning dashboard, deployed 2026-03-13 (CHG-2026-004). MMM-Jast for Yahoo Finance stocks."
 
