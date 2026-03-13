@@ -6,8 +6,8 @@ services:
     environment:
       - TZ=America/New_York
     volumes:
-      - /srv/homelab/magicmirror/config:/home/node/MagicMirror/config
-      - /srv/homelab/magicmirror/modules:/home/node/MagicMirror/modules
+      - /srv/homelab/magicmirror/config:/opt/magic_mirror/config
+      - /srv/homelab/magicmirror/modules:/opt/magic_mirror/modules
     networks:
       - geek-infra
 
