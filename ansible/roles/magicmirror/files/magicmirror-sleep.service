@@ -6,4 +6,4 @@ After=graphical-session.target
 Type=oneshot
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/johnb/.Xauthority
-ExecStart=/usr/bin/xrandr --output HDMI-A-0 --off
+ExecStart=/bin/bash -c 'xset +dpms && xset dpms 30 30 30 && xset dpms force off'
