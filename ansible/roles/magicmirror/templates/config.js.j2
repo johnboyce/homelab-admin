@@ -6,6 +6,7 @@
  * Weather locations:
  *   - Glen Mills, PA (zip 19342): lat 39.8956 / lon -75.4952 [imperial]
  *   - Letterkenny, Donegal, Ireland: lat 54.9558 / lon -7.7342 [metric]
+ * Background: MMM-Wallpaper (bing daily — change source to "local" for Ireland images)
  * Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance — no API key)
  * News: BBC World + The Guardian (world) | NBC Philadelphia + 6ABC (local)
  */
@@ -25,6 +26,18 @@ let config = {
     modules: [
         {
             module: "alert",
+        },
+
+        /* ── Background: Ireland / landscape wallpaper ── */
+        {
+            module: "MMM-Wallpaper",
+            position: "fullscreen_below",
+            config: {
+                source: "bing",          /* daily landscape photos — no API key */
+                slideInterval: 10 * 60 * 1000,   /* rotate every 10 minutes */
+                maximumEntries: 10,
+                filter: "brightness(0.35) saturate(1.1)",  /* darken for readability */
+            }
         },
         {
             module: "clock",
