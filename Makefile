@@ -1,4 +1,4 @@
-.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik deploy-bookstack deploy-nginx deploy-pihole deploy-ollama deploy-cloudflare-ddns bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx
+.PHONY: preflight nginx-test nginx-reload nginx-import nginx-deploy deploy-authentik deploy-bookstack deploy-nginx deploy-pihole deploy-ollama deploy-cloudflare-ddns bookstack-oidc-bootstrap authentik-config-dump authentik-inspect homelab-status homelab-status-verbose homelab-logs homelab-health homelab-backup homelab-backup-list homelab-backup-restore setup-firewall ansible-install ansible-status ansible-dry-run ansible-apply ansible-firewall ansible-nginx magicmirror-test
 
 preflight:
 	@bad=$$(find platform -not -user $$(id -un) -print -quit 2>/dev/null || true); \
@@ -165,3 +165,12 @@ ansible-nginx:
 	@echo "Tip: Add ARGS for dry-run: make ansible-nginx ARGS='--check --diff'"
 	@echo ""
 	cd ansible && ansible-playbook playbooks/nginx.yml $(ARGS)
+
+magicmirror-test: ## Force-wake display and open MagicMirror kiosk immediately (no schedule wait)
+	@echo "== Waking display and launching MagicMirror kiosk on geek =="
+	ssh -o IdentityFile=~/.ssh/id_ed25519 johnb@geek \
+		"DISPLAY=:0 XAUTHORITY=/home/johnb/.Xauthority xset dpms force on; \
+		 DISPLAY=:0 XAUTHORITY=/home/johnb/.Xauthority \
+		   chromium-browser --kiosk --noerrdialogs --disable-infobars \
+		   --disable-session-crashed-bubble http://magicmirror.geek &"
+	@open http://magicmirror.geek 2>/dev/null || true

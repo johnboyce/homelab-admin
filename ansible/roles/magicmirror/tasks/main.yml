@@ -1,0 +1,192 @@
+---
+# MagicMirror² morning dashboard role
+# Manages: Docker service + Chromium kiosk + systemd display scheduling
+# Secrets:  /etc/homelab/secrets/magicmirror.env (OPENWEATHERMAP_API_KEY)
+# Data:     /srv/homelab/magicmirror/
+# Access:   http://magicmirror.geek (LAN only, nginx proxy)
+# Requires: X11 session (GDM3 Wayland disabled by this role)
+
+- name: Check MagicMirror secrets file exists
+  stat:
+    path: /etc/homelab/secrets/magicmirror.env
+  become: yes
+  register: magicmirror_secrets
+  tags: [magicmirror, lifecycle]
+
+- name: Fail if secrets file is missing
+  fail:
+    msg: |
+      /etc/homelab/secrets/magicmirror.env not found.
+      Create it on geek before deploying:
+        sudo bash -c 'echo "OPENWEATHERMAP_API_KEY=<your-key>" \
+          > /etc/homelab/secrets/magicmirror.env && \
+          chmod 600 /etc/homelab/secrets/magicmirror.env'
+      Register a free API key at: https://openweathermap.org → API keys
+  when: not magicmirror_secrets.stat.exists
+  tags: [magicmirror, lifecycle]
+
+- name: Read MagicMirror secrets
+  community.general.ini_file:
+    path: /etc/homelab/secrets/magicmirror.env
+  become: yes
+  register: magicmirror_env_raw
+  check_mode: no
+  tags: [magicmirror, lifecycle]
+
+- name: Load MagicMirror secrets as vars
+  set_fact:
+    magicmirror_secrets_vars: "{{ dict(magicmirror_env_raw.content | default('') | regex_findall('([A-Z_]+)=(.+)')) }}"
+  no_log: true
+  tags: [magicmirror, lifecycle]
+
+- name: Ensure MagicMirror data directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  loop:
+    - /srv/homelab/magicmirror/config
+    - /srv/homelab/magicmirror/modules
+  tags: [magicmirror, lifecycle]
+
+- name: Deploy MagicMirror config.js from template
+  template:
+    src: config.js.j2
+    dest: /srv/homelab/magicmirror/config/config.js
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  vars:
+    openweathermap_api_key: "{{ magicmirror_secrets_vars.OPENWEATHERMAP_API_KEY }}"
+  notify: Restart MagicMirror
+  no_log: true
+  tags: [magicmirror, config]
+
+- name: Ensure MagicMirror container is running
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/magicmirror
+    state: present
+    pull: policy
+  become: yes
+  tags: [magicmirror, lifecycle]
+
+- name: Check MagicMirror container state
+  community.docker.docker_container_info:
+    name: geek-magicmirror
+  register: magicmirror_info
+  become: yes
+  tags: [magicmirror, lifecycle]
+
+- name: Report MagicMirror container state
+  debug:
+    msg: "MagicMirror container state: {{ magicmirror_info.container.State.Status | default('not found') }}"
+  tags: [magicmirror, lifecycle]
+
+- name: Install MMM-Stocks module (Yahoo Finance, no API key required)
+  community.docker.docker_container_exec:
+    container: geek-magicmirror
+    command: >
+      sh -c "cd /home/node/MagicMirror/modules &&
+             git clone https://github.com/jalibu/MMM-Stocks.git MMM-Stocks &&
+             cd MMM-Stocks && npm install --production"
+  become: yes
+  register: mmm_stocks_install
+  failed_when:
+    - mmm_stocks_install.rc != 0
+    - "'already exists' not in (mmm_stocks_install.stderr | default(''))"
+  tags: [magicmirror, modules]
+
+# --- Host-level: X11 session (required for xset dpms) ---
+
+- name: Ensure chromium-browser is installed
+  apt:
+    name: chromium-browser
+    state: present
+    update_cache: yes
+  become: yes
+  tags: [magicmirror, kiosk]
+
+- name: Disable Wayland in GDM3 (xset dpms requires X11)
+  lineinfile:
+    path: /etc/gdm3/custom.conf
+    regexp: '^#?WaylandEnable='
+    line: 'WaylandEnable=false'
+    insertafter: '^\[daemon\]'
+    backup: yes
+  become: yes
+  tags: [magicmirror, kiosk]
+
+# --- Host-level: Kiosk autostart ---
+
+- name: Ensure johnb autostart directory exists
+  file:
+    path: /home/johnb/.config/autostart
+    state: directory
+    owner: johnb
+    group: johnb
+    mode: '0755'
+  become: yes
+  tags: [magicmirror, kiosk]
+
+- name: Deploy Chromium kiosk autostart entry
+  copy:
+    src: magicmirror-kiosk.desktop
+    dest: /home/johnb/.config/autostart/magicmirror-kiosk.desktop
+    owner: johnb
+    group: johnb
+    mode: '0644'
+  become: yes
+  tags: [magicmirror, kiosk]
+
+# --- Host-level: systemd user timers for display wake/sleep ---
+
+- name: Ensure johnb systemd user directory exists
+  file:
+    path: /home/johnb/.config/systemd/user
+    state: directory
+    owner: johnb
+    group: johnb
+    mode: '0755'
+  become: yes
+  tags: [magicmirror, schedule]
+
+- name: Deploy display wake/sleep systemd units
+  copy:
+    src: "{{ item }}"
+    dest: /home/johnb/.config/systemd/user/{{ item }}
+    owner: johnb
+    group: johnb
+    mode: '0644'
+  become: yes
+  loop:
+    - magicmirror-wake.service
+    - magicmirror-wake.timer
+    - magicmirror-sleep.service
+    - magicmirror-sleep.timer
+  notify: Reload user systemd
+  tags: [magicmirror, schedule]
+
+- name: Enable lingering for johnb (timers survive logout)
+  command: loginctl enable-linger johnb
+  become: yes
+  changed_when: false
+  tags: [magicmirror, schedule]
+
+- name: Enable and start display scheduling timers
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+    scope: user
+  become: yes
+  become_user: johnb
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+  loop:
+    - magicmirror-wake.timer
+    - magicmirror-sleep.timer
+  tags: [magicmirror, schedule]

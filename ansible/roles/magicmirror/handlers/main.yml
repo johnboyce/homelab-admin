@@ -1,0 +1,14 @@
+---
+- name: Restart MagicMirror
+  community.docker.docker_compose_v2:
+    project_src: /home/johnb/homelab-admin/platform/magicmirror
+    state: present
+    recreate: always
+  become: yes
+
+- name: Reload user systemd
+  command: >
+    sudo -u johnb
+    XDG_RUNTIME_DIR=/run/user/{{ ansible_user_uid }}
+    systemctl --user daemon-reload
+  become: yes

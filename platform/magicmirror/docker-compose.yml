@@ -1,0 +1,16 @@
+services:
+  magicmirror:
+    image: karsten13/magicmirror:latest
+    container_name: geek-magicmirror
+    restart: unless-stopped
+    environment:
+      - TZ=America/New_York
+    volumes:
+      - /srv/homelab/magicmirror/config:/home/node/MagicMirror/config
+      - /srv/homelab/magicmirror/modules:/home/node/MagicMirror/modules
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true

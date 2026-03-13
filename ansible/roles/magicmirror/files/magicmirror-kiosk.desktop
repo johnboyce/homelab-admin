@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=MagicMirror Kiosk
+Comment=Launch MagicMirror² in full-screen kiosk mode
+Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --disable-restore-session-state --no-first-run --check-for-update-interval=31536000 http://magicmirror.geek
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5
+Hidden=false
