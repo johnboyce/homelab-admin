@@ -1018,10 +1018,10 @@ x-service-registry:
       rotation_required: false
     volumes:
       - host_path: /srv/homelab/magicmirror/config
-        container_path: /home/node/MagicMirror/config
+        container_path: /opt/magic_mirror/config
         backup_required: false
       - host_path: /srv/homelab/magicmirror/modules
-        container_path: /home/node/MagicMirror/modules
+        container_path: /opt/magic_mirror/modules
         backup_required: false
     health_check:
       method: http

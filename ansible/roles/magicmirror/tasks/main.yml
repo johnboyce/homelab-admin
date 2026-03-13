@@ -99,7 +99,7 @@
 - name: Install MMM-Jast npm dependencies inside container
   shell: >
     docker exec --user root geek-magicmirror
-    sh -c 'cd /home/node/MagicMirror/modules/MMM-Jast && npm install --production'
+    sh -c 'cd /opt/magic_mirror/modules/MMM-Jast && npm install --production'
   become: yes
   when: mmm_jast_downloaded.changed
   tags: [magicmirror, modules]
