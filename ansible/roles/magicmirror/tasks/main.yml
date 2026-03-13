@@ -25,17 +25,17 @@
   when: not magicmirror_secrets.stat.exists
   tags: [magicmirror, lifecycle]
 
-- name: Read MagicMirror secrets
-  community.general.ini_file:
-    path: /etc/homelab/secrets/magicmirror.env
+- name: Read OPENWEATHERMAP_API_KEY from secrets file
+  shell: "grep '^OPENWEATHERMAP_API_KEY=' /etc/homelab/secrets/magicmirror.env | cut -d= -f2"
   become: yes
-  register: magicmirror_env_raw
-  check_mode: no
+  register: owm_key_result
+  changed_when: false
+  no_log: true
   tags: [magicmirror, lifecycle]
 
-- name: Load MagicMirror secrets as vars
+- name: Set OWM API key fact
   set_fact:
-    magicmirror_secrets_vars: "{{ dict(magicmirror_env_raw.content | default('') | regex_findall('([A-Z_]+)=(.+)')) }}"
+    openweathermap_api_key: "{{ owm_key_result.stdout }}"
   no_log: true
   tags: [magicmirror, lifecycle]
 
@@ -60,8 +60,6 @@
     group: root
     mode: '0644'
   become: yes
-  vars:
-    openweathermap_api_key: "{{ magicmirror_secrets_vars.OPENWEATHERMAP_API_KEY }}"
   notify: Restart MagicMirror
   no_log: true
   tags: [magicmirror, config]
