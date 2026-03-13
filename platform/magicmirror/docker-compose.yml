@@ -7,7 +7,7 @@ services:
       - TZ=America/New_York
     volumes:
       - /srv/homelab/magicmirror/config:/opt/magic_mirror/config
-      - /srv/homelab/magicmirror/modules:/opt/magic_mirror/modules
+      - /srv/homelab/magicmirror/modules/MMM-Jast:/opt/magic_mirror/modules/MMM-Jast
     networks:
       - geek-infra
 
