@@ -6,6 +6,12 @@
     recreate: always
   become: yes
 
+- name: Restart GDM
+  systemd:
+    name: gdm
+    state: restarted
+  become: yes
+
 - name: Reload user systemd
   shell: |
     uid=$(id -u johnb)
