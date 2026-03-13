@@ -46,8 +46,8 @@ The following versions are pinned and deployed as of 2026-03-12. This table MUST
 | bookstack | `lscr.io/linuxserver/bookstack` | `25.12.7` | pinned |
 | forgejo | `codeberg.org/forgejo/forgejo` | `14` | major-rolling |
 | forgejo-runner | `code.forgejo.org/forgejo/runner` | `12` | major-rolling |
-| woodpecker-server | `woodpeckerci/woodpecker-server` | `2.8.3` | pinned (v3 upgrade pending) |
-| woodpecker-agent | `woodpeckerci/woodpecker-agent` | `2.8.3` | pinned (v3 upgrade pending) |
+| woodpecker-server | `woodpeckerci/woodpecker-server` | `latest` ⚠️ | unpinnable — Docker Hub only publishes `latest` and `next-*`; no versioned stable tags available |
+| woodpecker-agent | `woodpeckerci/woodpecker-agent` | `latest` ⚠️ | unpinnable — Docker Hub only publishes `latest` and `next-*`; no versioned stable tags available |
 | vaultwarden | `vaultwarden/server` | `1.35.4` | pinned |
 | pihole | `pihole/pihole` | `2026.02.0` | pinned |
 | ollama | `ollama/ollama` | `0.17.7` | pinned |
