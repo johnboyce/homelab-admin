@@ -769,12 +769,12 @@ x-service-registry:
     ansible_role: woodpecker
     network: geek-infra
     version_policy:
-      strategy: latest
+      strategy: unpinnable
       current_version: latest
       update_schedule: monthly
       upstream_source: https://hub.docker.com/r/woodpeckerci/woodpecker-server
-      last_checked: "2026-03-04"
-      notes: "Using latest tag, monitor for breaking changes"
+      last_checked: "2026-03-12"
+      notes: "Docker Hub only publishes :latest and :next-* (dev builds). No versioned stable tags available. Revisit when upgrading to v3."
     ports:
       - container_port: 8000
         protocol: tcp
@@ -816,11 +816,11 @@ x-service-registry:
     ansible_role: vaultwarden
     network: geek-infra
     version_policy:
-      strategy: latest
-      current_version: latest
+      strategy: pinned
+      current_version: "1.35.4"
       update_schedule: monthly
       upstream_source: https://hub.docker.com/r/vaultwarden/server
-      last_checked: "2026-03-04"
+      last_checked: "2026-03-12"
       notes: "Security-critical service, monitor for CVEs"
     ports:
       - container_port: 80
@@ -861,11 +861,11 @@ x-service-registry:
     ansible_role: pihole
     network: geek-infra
     version_policy:
-      strategy: latest
-      current_version: latest
+      strategy: pinned
+      current_version: "2026.02.0"
       update_schedule: monthly
       upstream_source: https://hub.docker.com/r/pihole/pihole
-      last_checked: "2026-03-04"
+      last_checked: "2026-03-12"
     ports:
       - host_port: 53
         container_port: 53
@@ -966,11 +966,11 @@ x-service-registry:
     ansible_role: cloudflare_ddns
     network: geek-infra
     version_policy:
-      strategy: latest
-      current_version: latest
+      strategy: pinned
+      current_version: "1.15.1"
       update_schedule: quarterly
       upstream_source: https://github.com/oznu/docker-cloudflare-ddns
-      last_checked: "2026-03-04"
+      last_checked: "2026-03-12"
     ports: []
     secrets:
       env_file_path: /etc/homelab/secrets/cloudflare-ddns.env
@@ -1401,7 +1401,7 @@ x-current-state:
     - Clear separation between internal and public domains
 
   areas_for_improvement:
-    - Some services using :latest tag (vaultwarden, pihole, woodpecker)
+    - Woodpecker unpinnable (Docker Hub does not publish versioned stable tags)
     - Version checking not automated
     - Backup automation incomplete
     - Health monitoring is manual (no alerting)
@@ -1411,7 +1411,7 @@ x-current-state:
     - Disaster recovery playbook incomplete
 
   immediate_priorities:
-    - Pin versions for critical services using :latest
+    - Create Ansible role for Ollama (only service without one)
     - Create missing .env.example files
     - Implement automated version checking
     - Complete backup automation
@@ -1426,7 +1426,7 @@ x-current-state:
 # Version Matrix - Current vs Latest Available
 x-version-matrix:
   # This section should be updated regularly
-  last_updated: "2026-03-04"
+  last_updated: "2026-03-12"
   notes: "Manual version check needed, consider automation"
 
   services:
@@ -1461,26 +1461,38 @@ x-version-matrix:
       notes: "Using major version tag, auto-updates within v14"
 
     vaultwarden:
-      current: "latest"
+      current: "1.35.4"
       latest: "Check: https://github.com/dani-garcia/vaultwarden/releases"
-      update_recommended: true
-      notes: "Should pin to specific version for security-critical service"
+      update_recommended: false
+      notes: "Pinned 2026-03-12 (CHG-2026-003)"
 
     pihole:
-      current: "latest"
+      current: "2026.02.0"
       latest: "Check: https://github.com/pi-hole/docker-pi-hole/releases"
-      update_recommended: true
-      notes: "Should pin to specific version or use version tag"
+      update_recommended: false
+      notes: "Upgraded and pinned 2026-03-12 (CHG-2026-003)"
+
+    ollama:
+      current: "0.17.7"
+      latest: "Check: https://github.com/ollama/ollama/releases"
+      update_recommended: false
+      notes: "Upgraded and pinned 2026-03-12 (CHG-2026-003)"
+
+    cloudflare-ddns:
+      current: "1.15.1"
+      latest: "Check: https://github.com/favonia/cloudflare-ddns/releases"
+      update_recommended: false
+      notes: "Pinned 2026-03-12 (CHG-2026-003)"
 
     woodpecker:
       current: "latest"
-      latest: "Check: https://github.com/woodpecker-ci/woodpecker/releases"
-      update_recommended: true
-      notes: "Should pin to major or specific version"
+      latest: "N/A — Docker Hub only publishes :latest and :next-* dev builds"
+      update_recommended: false
+      notes: "Unpinnable; revisit when upgrading to v3 (CHG-2026-003)"
 
     plane:
       current: "latest"
       latest: "Check: https://github.com/makeplane/plane/releases"
       update_recommended: true
-      notes: "Community deployment, high risk with latest tag"
+      notes: "Official community CLI deployment; alignment tracked in CHG-2026-002"
 
