@@ -4,6 +4,4 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/johnb/.Xauthority
-ExecStart=/bin/bash -c 'xset +dpms && xset dpms 30 30 30 && xset dpms force off'
+ExecStart=/home/johnb/.local/bin/magicmirror-display-sleep.sh

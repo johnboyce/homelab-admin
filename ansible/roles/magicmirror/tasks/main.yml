@@ -50,6 +50,7 @@
   loop:
     - /srv/homelab/magicmirror/config
     - /srv/homelab/magicmirror/modules
+    - /srv/homelab/magicmirror/css
   tags: [magicmirror, lifecycle]
 
 - name: Deploy MagicMirror config.js from template
@@ -62,6 +63,17 @@
   become: yes
   notify: Restart MagicMirror
   no_log: true
+  tags: [magicmirror, config]
+
+- name: Deploy custom.css for module styling
+  copy:
+    src: custom.css
+    dest: /srv/homelab/magicmirror/css/custom.css
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  notify: Restart MagicMirror
   tags: [magicmirror, config]
 
 - name: Ensure MagicMirror container is running
@@ -151,14 +163,18 @@
     - /home/johnb/.local/bin
   tags: [magicmirror, kiosk]
 
-- name: Deploy kiosk wrapper script
+- name: Deploy kiosk and display management scripts
   copy:
-    src: magicmirror-kiosk.sh
-    dest: /home/johnb/.local/bin/magicmirror-kiosk.sh
+    src: "{{ item }}"
+    dest: /home/johnb/.local/bin/{{ item }}
     owner: johnb
     group: johnb
     mode: '0755'
   become: yes
+  loop:
+    - magicmirror-kiosk.sh
+    - magicmirror-display-sleep.sh
+    - magicmirror-display-wake.sh
   tags: [magicmirror, kiosk]
 
 - name: Deploy Chromium kiosk autostart entry

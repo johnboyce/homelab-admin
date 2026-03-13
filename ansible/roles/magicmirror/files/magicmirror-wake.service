@@ -4,7 +4,4 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/johnb/.Xauthority
-ExecStart=/usr/bin/xrandr --auto
-ExecStartPost=/bin/bash -c 'xset -dpms && xset s off'
+ExecStart=/home/johnb/.local/bin/magicmirror-display-wake.sh
