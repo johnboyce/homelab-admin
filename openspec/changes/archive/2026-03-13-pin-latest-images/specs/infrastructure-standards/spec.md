@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Image version pinning policy
 All services in the homelab stack SHALL use explicit image version tags. The `:latest` tag MUST NOT be used for any service that holds state or is security-sensitive. Stateless utility services MAY use `:latest` only when explicitly justified in the service inventory.
