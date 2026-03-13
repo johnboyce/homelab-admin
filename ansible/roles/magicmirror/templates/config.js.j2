@@ -1,0 +1,175 @@
+/* MagicMirror² configuration — managed by Ansible (magicmirror role)
+ * Source: ansible/roles/magicmirror/templates/config.js.j2
+ * DO NOT edit /srv/homelab/magicmirror/config/config.js directly — changes
+ * will be overwritten on next Ansible run. Edit the template instead.
+ *
+ * Weather locations:
+ *   - Wayne, PA (zip 19342): lat 39.8962 / lon -75.5288 [imperial]
+ *   - Letterkenny, Donegal, Ireland: lat 54.9558 / lon -7.7342 [metric]
+ * Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance — no API key)
+ * News: BBC World + Reuters (world) | Philly Inquirer + 6ABC (local)
+ */
+
+let config = {
+    address: "0.0.0.0",
+    port: 8080,
+    basePath: "/",
+    ipWhitelist: [],
+    useHttps: false,
+    language: "en",
+    locale: "en-US",
+    logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+    timeFormat: 12,
+    units: "imperial",
+
+    modules: [
+        {
+            module: "alert",
+        },
+        {
+            module: "clock",
+            position: "top_left",
+            config: {
+                dateFormat: "dddd, MMMM D",
+                showPeriod: true,
+            }
+        },
+
+        /* ── Wayne, PA (19342) — current conditions ── */
+        {
+            module: "weather",
+            position: "top_right",
+            header: "Wayne, PA",
+            config: {
+                weatherProvider: "openweathermap",
+                type: "current",
+                units: "imperial",
+                lat: 39.8962,
+                lon: -75.5288,
+                apiKey: "{{ openweathermap_api_key }}",
+                showWindDirection: true,
+                showWindDirectionAsArrow: true,
+                showHumidity: true,
+                showFeelsLike: true,
+            }
+        },
+
+        /* ── Wayne, PA (19342) — 5-day forecast ── */
+        {
+            module: "weather",
+            position: "top_right",
+            header: "Wayne, PA — Forecast",
+            config: {
+                weatherProvider: "openweathermap",
+                type: "forecast",
+                units: "imperial",
+                lat: 39.8962,
+                lon: -75.5288,
+                apiKey: "{{ openweathermap_api_key }}",
+                maxNumberOfDays: 5,
+                showRainAmount: true,
+            }
+        },
+
+        /* ── Letterkenny, Donegal — current conditions ── */
+        {
+            module: "weather",
+            position: "top_left",
+            header: "Letterkenny, Ireland",
+            config: {
+                weatherProvider: "openweathermap",
+                type: "current",
+                units: "metric",
+                lat: 54.9558,
+                lon: -7.7342,
+                apiKey: "{{ openweathermap_api_key }}",
+                showWindDirection: true,
+                showWindDirectionAsArrow: true,
+                showHumidity: true,
+                showFeelsLike: true,
+            }
+        },
+
+        /* ── Letterkenny, Donegal — 3-day forecast ── */
+        {
+            module: "weather",
+            position: "top_left",
+            header: "Letterkenny — Forecast",
+            config: {
+                weatherProvider: "openweathermap",
+                type: "forecast",
+                units: "metric",
+                lat: 54.9558,
+                lon: -7.7342,
+                apiKey: "{{ openweathermap_api_key }}",
+                maxNumberOfDays: 3,
+                showRainAmount: true,
+            }
+        },
+
+        /* ── Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance) ── */
+        {
+            module: "MMM-Stocks",
+            position: "bottom_bar",
+            config: {
+                stocks: "LMT,CMCSA,AAPL,NVDA",
+                updateInterval: 300000,   /* 5 minutes */
+                showChange: true,
+                showChangePercent: true,
+                currencyStyle: "symbol",
+            }
+        },
+
+        /* ── World News: BBC + Reuters ── */
+        {
+            module: "newsfeed",
+            position: "bottom_left",
+            header: "World News",
+            config: {
+                feeds: [
+                    {
+                        title: "BBC World",
+                        url: "http://feeds.bbci.co.uk/news/world/rss.xml",
+                    },
+                    {
+                        title: "Reuters",
+                        url: "https://feeds.reuters.com/reuters/topNews",
+                    },
+                ],
+                showSourceTitle: true,
+                showPublishDate: true,
+                broadcastNewsFeeds: true,
+                broadcastNewsFeedItems: true,
+                reloadInterval: 300000,   /* 5 minutes */
+                updateInterval: 10000,    /* rotate every 10s */
+            }
+        },
+
+        /* ── Local News: Philly Inquirer + 6ABC ── */
+        {
+            module: "newsfeed",
+            position: "bottom_right",
+            header: "Local News",
+            config: {
+                feeds: [
+                    {
+                        title: "Philly Inquirer",
+                        url: "https://www.inquirer.com/arcio/rss/",
+                    },
+                    {
+                        title: "6ABC Action News",
+                        url: "https://6abc.com/feed/",
+                    },
+                ],
+                showSourceTitle: true,
+                showPublishDate: true,
+                broadcastNewsFeeds: true,
+                broadcastNewsFeedItems: true,
+                reloadInterval: 300000,
+                updateInterval: 10000,
+            }
+        },
+    ]
+};
+
+if (typeof module !== "undefined") { module.exports = config; }

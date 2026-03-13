@@ -26,6 +26,8 @@ services:
     grpc_port: 9000
   vaultwarden:
     port: 80
+  magicmirror:
+    port: 8080
 
 # Network Topology
 network:
