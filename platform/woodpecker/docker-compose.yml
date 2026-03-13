@@ -1,6 +1,6 @@
 services:
   woodpecker-server:
-    image: woodpeckerci/woodpecker-server:latest
+    image: woodpeckerci/woodpecker-server:2.8.3
     container_name: woodpecker-server
     restart: unless-stopped
     env_file: /etc/homelab/secrets/woodpecker.env
@@ -16,7 +16,7 @@ services:
       - geek-infra
 
   woodpecker-agent:
-    image: woodpeckerci/woodpecker-agent:latest
+    image: woodpeckerci/woodpecker-agent:2.8.3
     container_name: woodpecker-agent
     restart: unless-stopped
     env_file: /etc/homelab/secrets/woodpecker.env
