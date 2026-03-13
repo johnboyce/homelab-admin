@@ -4,4 +4,6 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
+StandardOutput=journal
+StandardError=journal
 ExecStart=/home/johnb/.local/bin/magicmirror-display-sleep.sh
