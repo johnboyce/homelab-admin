@@ -1,0 +1,34 @@
+/*
+ * MagicMirror² custom CSS — managed by Ansible (magicmirror role)
+ * Provides:
+ *   - Semi-transparent dark background on each module so text
+ *     stays readable over the Ireland wallpaper
+ *   - Prevents news boxes from bleeding into each other
+ */
+
+/* Dark pill behind every module */
+.module {
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: 4px;
+}
+
+/* Tighter padding for fullscreen wallpaper module itself */
+.MMM-Wallpaper {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* Constrain news boxes so they don't overflow into each other */
+.module.newsfeed {
+    max-width: 48vw;
+    overflow: hidden;
+}
+
+/* Slightly brighter headlines */
+.newsfeed .newsfeed-source {
+    color: #aad4f5;
+}
