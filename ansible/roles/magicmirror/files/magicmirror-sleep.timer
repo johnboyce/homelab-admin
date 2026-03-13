@@ -1,8 +1,8 @@
 [Unit]
-Description=Sleep display at 9:00 AM after MagicMirror morning window
+Description=Sleep display at 8:00 AM after MagicMirror morning window
 
 [Timer]
-OnCalendar=*-*-* 09:00:00
+OnCalendar=*-*-* 08:00:00
 Persistent=true
 
 [Install]
