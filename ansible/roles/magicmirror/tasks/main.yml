@@ -116,6 +116,30 @@
   when: mmm_jast_downloaded.changed
   tags: [magicmirror, modules]
 
+- name: Ensure MMM-CameraSnapshots module directory exists
+  file:
+    path: /srv/homelab/magicmirror/modules/MMM-CameraSnapshots
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  tags: [magicmirror, modules]
+
+- name: Deploy MMM-CameraSnapshots module files
+  copy:
+    src: "MMM-CameraSnapshots/{{ item }}"
+    dest: /srv/homelab/magicmirror/modules/MMM-CameraSnapshots/{{ item }}
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  loop:
+    - MMM-CameraSnapshots.js
+    - MMM-CameraSnapshots.css
+  notify: Restart MagicMirror
+  tags: [magicmirror, modules]
+
 # --- Host-level: X11 session (required for xset dpms) ---
 
 - name: Ensure chromium-browser is installed

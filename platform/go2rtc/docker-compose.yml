@@ -1,0 +1,13 @@
+services:
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: geek-go2rtc
+    restart: unless-stopped
+    volumes:
+      - /srv/homelab/go2rtc/config/go2rtc.yaml:/config/go2rtc.yaml:ro
+    networks:
+      - geek-infra
+
+networks:
+  geek-infra:
+    external: true

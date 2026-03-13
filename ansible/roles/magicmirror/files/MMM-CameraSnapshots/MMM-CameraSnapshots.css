@@ -1,0 +1,37 @@
+.camera-snapshot-wrapper {
+    text-align: center;
+}
+
+.camera-snapshot-wrapper img {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.camera-label {
+    margin-bottom: 4px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.camera-dots {
+    margin-top: 6px;
+    text-align: center;
+}
+
+.camera-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    margin: 0 3px;
+}
+
+.camera-dot.active {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.camera-offline {
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
