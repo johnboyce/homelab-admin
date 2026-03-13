@@ -6,5 +6,5 @@ After=graphical-session.target
 Type=oneshot
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/johnb/.Xauthority
-ExecStart=/usr/bin/xset dpms force on
-ExecStartPost=/usr/bin/xrandr --auto
+ExecStart=/usr/bin/xrandr --auto
+ExecStartPost=/bin/bash -c 'xset -dpms && xset s off'
