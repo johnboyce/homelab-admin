@@ -7,7 +7,7 @@
  *   - Wayne, PA (zip 19342): lat 39.8962 / lon -75.5288 [imperial]
  *   - Letterkenny, Donegal, Ireland: lat 54.9558 / lon -7.7342 [metric]
  * Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance — no API key)
- * News: BBC World + Reuters (world) | Philly Inquirer + 6ABC (local)
+ * News: BBC World + AP News (world) | Philly Inquirer + 6ABC (local)
  */
 
 let config = {
@@ -127,7 +127,7 @@ let config = {
             }
         },
 
-        /* ── World News: BBC + Reuters ── */
+        /* ── World News: BBC + AP News ── */
         {
             module: "newsfeed",
             position: "bottom_left",
@@ -139,8 +139,8 @@ let config = {
                         url: "http://feeds.bbci.co.uk/news/world/rss.xml",
                     },
                     {
-                        title: "Reuters",
-                        url: "https://feeds.reuters.com/reuters/topNews",
+                        title: "AP News",
+                        url: "https://feeds.apnews.com/rss/apf-topnews",
                     },
                 ],
                 showSourceTitle: true,
@@ -161,7 +161,7 @@ let config = {
                 feeds: [
                     {
                         title: "Philly Inquirer",
-                        url: "https://www.inquirer.com/arcio/rss/",
+                        url: "https://www.inquirer.com/rss/feed.rss",
                     },
                     {
                         title: "6ABC Action News",
