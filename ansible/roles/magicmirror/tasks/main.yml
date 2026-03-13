@@ -84,18 +84,21 @@
     msg: "MagicMirror container state: {{ magicmirror_info.container.State.Status | default('not found') }}"
   tags: [magicmirror, lifecycle]
 
-- name: Install MMM-Stocks module (Yahoo Finance, no API key required)
-  community.docker.docker_container_exec:
-    container: geek-magicmirror
-    command: >
-      sh -c "cd /home/node/MagicMirror/modules &&
-             git clone https://github.com/jalibu/MMM-Stocks.git MMM-Stocks &&
-             cd MMM-Stocks && npm install --production"
+- name: Clone MMM-Stocks module to host volume (Yahoo Finance, no API key)
+  git:
+    repo: https://github.com/jalibu/MMM-Stocks.git
+    dest: /srv/homelab/magicmirror/modules/MMM-Stocks
+    update: no
   become: yes
-  register: mmm_stocks_install
-  failed_when:
-    - mmm_stocks_install.rc != 0
-    - "'already exists' not in (mmm_stocks_install.stderr | default(''))"
+  register: mmm_stocks_cloned
+  tags: [magicmirror, modules]
+
+- name: Install MMM-Stocks npm dependencies inside container
+  shell: >
+    docker exec --user root geek-magicmirror
+    sh -c 'cd /home/node/MagicMirror/modules/MMM-Stocks && npm install --production'
+  become: yes
+  when: mmm_stocks_cloned.changed
   tags: [magicmirror, modules]
 
 # --- Host-level: X11 session (required for xset dpms) ---
