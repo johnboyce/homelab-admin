@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Display No-Blank
+Comment=Disable screen blank, DPMS, and screen lock for kiosk dashboard
+Exec=bash -c 'xset -dpms; xset s off; gsettings set org.gnome.desktop.session idle-delay 0; gsettings set org.gnome.desktop.screensaver lock-enabled false'
+X-GNOME-Autostart-enabled=true
+Hidden=false
