@@ -29,10 +29,9 @@ RUN curl -fsSL https://services.gradle.org/distributions/gradle-9.0.0-bin.zip \
     rm gradle-9.0.0-bin.zip /tmp/gradle.zip
 
 ENV GRADLE_HOME=/opt/gradle-9.0.0
+ENV MAVEN_HOME=/opt/apache-maven-3.9.9
+ENV PATH="${GRADLE_HOME}/bin:${MAVEN_HOME}/bin:${PATH}"
 
 # Maven 3.9.x
 RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz | \
-    tar -xz -C /opt && \
-    ln -s /opt/apache-maven-3.9.9/bin/mvn /usr/local/bin/mvn
-
-ENV MAVEN_HOME=/opt/apache-maven-3.9.9
+    tar -xz -C /opt
