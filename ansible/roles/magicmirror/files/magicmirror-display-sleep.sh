@@ -1,36 +1,33 @@
 #!/bin/bash
-# Turns off the display for the MagicMirror sleep window.
-# 1. Kills Chromium kiosk (it inhibits DPMS in fullscreen mode)
-# 2. Disables the display output via xrandr
-# 3. Enables DPMS with short timeouts as safety net (GNOME can re-enable xrandr outputs)
+# Ends the MagicMirror morning window.
+# Kills Chromium and the keep-awake mouse wiggler, then lets GNOME's
+# default idle/DPMS power management put the display to sleep naturally.
 
 set -euo pipefail
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') [sleep] $*"; }
 
-export DISPLAY=:0
-export XAUTHORITY=/home/johnb/.Xauthority
+export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 
-# Kill Chromium kiosk — it inhibits DPMS when in fullscreen/kiosk mode
+# Ensure screen lock is disabled so the wake script can dismiss the
+# screensaver without requiring a password.
+gsettings set org.gnome.desktop.screensaver lock-enabled false 2>/dev/null || true
+
+# Kill the keep-awake mouse wiggler
+log "Stopping keep-awake wiggler"
+pkill -f magicmirror-keep-awake.sh || true
+
+# Kill Chromium kiosk
 log "Killing Chromium kiosk..."
 pkill -f chromium-browser || true
-sleep 2
 
-# Turn off the connected display via xrandr
-OUTPUT=$(xrandr | grep ' connected' | head -1 | cut -d' ' -f1)
-if [ -n "$OUTPUT" ]; then
-    log "Turning off display output: $OUTPUT"
-    xrandr --output "$OUTPUT" --off
-else
-    log "WARNING: No connected output found"
-fi
-
-# Enable DPMS with short timeouts as safety net.
-# GNOME/Mutter can re-enable xrandr outputs automatically, but DPMS will
-# blank the display again within seconds even if that happens.
-log "Enabling DPMS safety net (10s standby/suspend/off)"
+# Ensure X11 screensaver and DPMS timeouts are set (the wake script's
+# xset -dpms / xset s off must be undone for the display to sleep).
+export DISPLAY=:0
+export XAUTHORITY=/home/johnb/.Xauthority
+log "Restoring X11 screensaver and DPMS timeouts"
+xset s 300 300
 xset +dpms
-xset dpms 10 10 10
-xset dpms force off
+xset dpms 300 300 300
 
-log "Display sleep complete"
+log "Display sleep complete — monitor will power off in ~5min"

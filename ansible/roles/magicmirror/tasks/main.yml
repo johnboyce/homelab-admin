@@ -116,14 +116,17 @@
   when: mmm_jast_downloaded.changed
   tags: [magicmirror, modules]
 
-- name: Ensure MMM-CameraSnapshots module directory exists
+- name: Ensure MMM-CameraSnapshots module and cache directories exist
   file:
-    path: /srv/homelab/magicmirror/modules/MMM-CameraSnapshots
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: '0755'
   become: yes
+  loop:
+    - /srv/homelab/magicmirror/modules/MMM-CameraSnapshots
+    - /srv/homelab/magicmirror/modules/MMM-CameraSnapshots/cache
   tags: [magicmirror, modules]
 
 - name: Deploy MMM-CameraSnapshots module files
@@ -199,26 +202,18 @@
     - magicmirror-kiosk.sh
     - magicmirror-display-sleep.sh
     - magicmirror-display-wake.sh
+    - magicmirror-keep-awake.sh
+    - magicmirror-snapshot-cache.sh
   tags: [magicmirror, kiosk]
 
-- name: Deploy Chromium kiosk autostart entry
-  copy:
-    src: magicmirror-kiosk.desktop
-    dest: /home/johnb/.config/autostart/magicmirror-kiosk.desktop
-    owner: johnb
-    group: johnb
-    mode: '0644'
+- name: Remove legacy autostart entries (wake/sleep timers handle everything)
+  file:
+    path: /home/johnb/.config/autostart/{{ item }}
+    state: absent
   become: yes
-  tags: [magicmirror, kiosk]
-
-- name: Deploy display no-blank autostart entry
-  copy:
-    src: display-noblank.desktop
-    dest: /home/johnb/.config/autostart/display-noblank.desktop
-    owner: johnb
-    group: johnb
-    mode: '0644'
-  become: yes
+  loop:
+    - magicmirror-kiosk.desktop
+    - display-noblank.desktop
   tags: [magicmirror, kiosk]
 
 # --- Host-level: systemd user timers for display wake/sleep ---
@@ -233,7 +228,7 @@
   become: yes
   tags: [magicmirror, schedule]
 
-- name: Deploy display wake/sleep systemd units
+- name: Deploy display wake/sleep and snapshot cache systemd units
   copy:
     src: "{{ item }}"
     dest: /home/johnb/.config/systemd/user/{{ item }}
@@ -246,6 +241,8 @@
     - magicmirror-wake.timer
     - magicmirror-sleep.service
     - magicmirror-sleep.timer
+    - magicmirror-snapshot-cache.service
+    - magicmirror-snapshot-cache.timer
   notify: Reload user systemd
   tags: [magicmirror, schedule]
 
@@ -264,8 +261,9 @@
   become: yes
   become_user: johnb
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] }}"
   loop:
     - magicmirror-wake.timer
     - magicmirror-sleep.timer
+    - magicmirror-snapshot-cache.timer
   tags: [magicmirror, schedule]
