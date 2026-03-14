@@ -17,13 +17,18 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends git unzip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Pre-cache Gradle 9.0.0 for wrapper
-RUN mkdir -p /root/.gradle/wrapper/dists/gradle-9.0.0-bin && \
-    curl -fsSL https://services.gradle.org/distributions/gradle-9.0.0-bin.zip \
-      -o /root/.gradle/wrapper/dists/gradle-9.0.0-bin/gradle-9.0.0-bin.zip && \
+# Gradle 9.0.0 — installed as system command + pre-cached for wrapper
+RUN curl -fsSL https://services.gradle.org/distributions/gradle-9.0.0-bin.zip \
+      -o /tmp/gradle.zip && \
+    unzip -qd /opt /tmp/gradle.zip && \
+    ln -s /opt/gradle-9.0.0/bin/gradle /usr/local/bin/gradle && \
+    mkdir -p /root/.gradle/wrapper/dists/gradle-9.0.0-bin && \
+    cp /tmp/gradle.zip /root/.gradle/wrapper/dists/gradle-9.0.0-bin/gradle-9.0.0-bin.zip && \
     cd /root/.gradle/wrapper/dists/gradle-9.0.0-bin && \
     unzip -q gradle-9.0.0-bin.zip && \
-    rm gradle-9.0.0-bin.zip
+    rm gradle-9.0.0-bin.zip /tmp/gradle.zip
+
+ENV GRADLE_HOME=/opt/gradle-9.0.0
 
 # Maven 3.9.x
 RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz | \
