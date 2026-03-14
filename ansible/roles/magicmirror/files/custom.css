@@ -1,9 +1,6 @@
 /*
  * MagicMirror² custom CSS — managed by Ansible (magicmirror role)
- * Provides:
- *   - Semi-transparent dark background on each module so text
- *     stays readable over the Ireland wallpaper
- *   - Prevents news boxes from bleeding into each other
+ * Layout: clock | weather-camera-weather | news-forecast-news | stocks
  */
 
 /* Dark pill behind every module */
@@ -22,9 +19,15 @@
     border-radius: 0 !important;
 }
 
-/* Constrain news boxes so they don't overflow into each other */
+/* Weather modules: constrain width so they don't crowd the camera */
+.module.weather {
+    max-width: 30vw;
+    overflow: hidden;
+}
+
+/* News modules: constrain width, keep text from bleeding */
 .module.newsfeed {
-    max-width: 48vw;
+    max-width: 35vw;
     overflow: hidden;
 }
 

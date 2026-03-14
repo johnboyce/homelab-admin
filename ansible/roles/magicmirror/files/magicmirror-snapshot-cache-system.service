@@ -1,8 +1,12 @@
 [Unit]
 Description=Cache camera snapshots from go2rtc
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
+User=johnb
+Group=johnb
 ExecStart=/home/johnb/.local/bin/magicmirror-snapshot-cache.sh
 StandardOutput=journal
 StandardError=journal

@@ -1,0 +1,13 @@
+[Unit]
+Description=Start MagicMirror kiosk if boot occurs during wake window
+After=graphical.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/johnb/.local/bin/magicmirror-kiosk-boot-check.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical.target

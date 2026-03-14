@@ -1,5 +1,5 @@
 [Unit]
-Description=Sleep display at 8:00 AM after MagicMirror morning window
+Description=Sleep MagicMirror kiosk at 08:00 daily
 
 [Timer]
 OnCalendar=*-*-* 08:00:00

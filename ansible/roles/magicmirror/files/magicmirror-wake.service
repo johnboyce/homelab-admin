@@ -1,9 +1,0 @@
-[Unit]
-Description=Wake display for MagicMirror morning window
-After=graphical-session.target
-
-[Service]
-Type=oneshot
-StandardOutput=journal
-StandardError=journal
-ExecStart=/home/johnb/.local/bin/magicmirror-display-wake.sh

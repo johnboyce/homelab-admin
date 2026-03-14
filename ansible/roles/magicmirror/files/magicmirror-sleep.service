@@ -1,9 +1,0 @@
-[Unit]
-Description=Sleep display after MagicMirror morning window
-After=graphical-session.target
-
-[Service]
-Type=oneshot
-StandardOutput=journal
-StandardError=journal
-ExecStart=/home/johnb/.local/bin/magicmirror-display-sleep.sh

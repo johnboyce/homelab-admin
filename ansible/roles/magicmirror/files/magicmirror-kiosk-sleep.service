@@ -1,0 +1,9 @@
+[Unit]
+Description=Sleep MagicMirror kiosk — stop X server and power off monitor
+After=graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/johnb/.local/bin/magicmirror-kiosk-sleep.sh
+StandardOutput=journal
+StandardError=journal
