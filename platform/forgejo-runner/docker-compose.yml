@@ -20,9 +20,10 @@ services:
             --name "geek-runner" \
             --labels "ubuntu-latest:docker://node:20-bullseye,ubuntu-22.04:docker://node:20-bullseye,debian-latest:docker://debian:bookworm,java-21:docker://geek/java-21-node:latest"
         fi
-        exec forgejo-runner daemon
+        exec forgejo-runner daemon --config /data/config.yaml
     volumes:
       - /srv/homelab/forgejo-runner/data:/data
+      - /srv/homelab/forgejo-runner/config.yaml:/data/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker:ro
     networks:
