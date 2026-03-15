@@ -1,0 +1,12 @@
+log:
+  level: info
+
+runner:
+  capacity: 2
+  timeout: 30m
+  shutdown_timeout: 5m
+  fetch_timeout: 5s
+  fetch_interval: 2s
+
+container:
+  network: "geek-infra"
