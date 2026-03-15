@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=MagicMirror Kiosk
-Comment=Launch MagicMirror² in full-screen kiosk mode
-Exec=/home/johnb/.local/bin/magicmirror-kiosk.sh
-X-GNOME-Autostart-enabled=true
-X-GNOME-Autostart-Delay=5
-Hidden=false

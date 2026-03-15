@@ -3,10 +3,20 @@
  * DO NOT edit /srv/homelab/magicmirror/config/config.js directly — changes
  * will be overwritten on next Ansible run. Edit the template instead.
  *
- * Weather locations:
+ * Layout (1920×1080):
+ *   top_bar:       Clock (centered, full width)
+ *   top_left:      Letterkenny, Ireland — current weather
+ *   top_center:    Security cameras (480×360, rotates every 30s)
+ *   top_right:     Glen Mills, PA — current weather
+ *   bottom_left:   World news (BBC + Guardian)
+ *   bottom_center: Both forecasts (Ireland + PA, stacked)
+ *   bottom_right:  Local news (NBC Philly + 6ABC)
+ *   bottom_bar:    Stock ticker (LMT, CMCSA, AAPL, NVDA)
+ *
+ * Weather:
  *   - Glen Mills, PA (zip 19342): lat 39.8956 / lon -75.4952 [imperial]
  *   - Letterkenny, Donegal, Ireland: lat 54.9558 / lon -7.7342 [metric]
- * Background: MMM-Wallpaper (bing daily — change source to "local" for Ireland images)
+ * Background: MMM-Wallpaper (bing daily)
  * Cameras: Eufy S380 snapshots via go2rtc (Backyard, Breezeway, Garage)
  * Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance — no API key)
  * News: BBC World + The Guardian (world) | NBC Philadelphia + 6ABC (local)
@@ -29,67 +39,29 @@ let config = {
             module: "alert",
         },
 
-        /* ── Background: Ireland / landscape wallpaper ── */
+        /* ── Background: landscape wallpaper ── */
         {
             module: "MMM-Wallpaper",
             position: "fullscreen_below",
             config: {
-                source: "bing",          /* daily landscape photos — no API key */
-                slideInterval: 10 * 60 * 1000,   /* rotate every 10 minutes */
+                source: "bing",
+                slideInterval: 10 * 60 * 1000,
                 maximumEntries: 10,
-                filter: "brightness(0.35) saturate(1.1)",  /* darken for readability */
+                filter: "brightness(0.35) saturate(1.1)",
             }
         },
+
+        /* ── Row 1: Clock (top_bar) ── */
         {
             module: "clock",
-            position: "top_left",
+            position: "top_bar",
             config: {
                 dateFormat: "dddd, MMMM D",
                 showPeriod: true,
             }
         },
 
-        /* ── Wayne, PA (19342) — current conditions ── */
-        {
-            module: "weather",
-            position: "top_right",
-            header: "Glen Mills, PA",
-            config: {
-                weatherProvider: "openweathermap",
-                type: "current",
-                apiVersion: "2.5",
-                weatherEndpoint: "/weather",
-                units: "imperial",
-                lat: 39.8956,
-                lon: -75.4952,
-                apiKey: "{{ openweathermap_api_key }}",
-                showWindDirection: true,
-                showWindDirectionAsArrow: true,
-                showHumidity: true,
-                showFeelsLike: true,
-            }
-        },
-
-        /* ── Wayne, PA (19342) — 5-day forecast ── */
-        {
-            module: "weather",
-            position: "top_right",
-            header: "Glen Mills, PA — Forecast",
-            config: {
-                weatherProvider: "openweathermap",
-                type: "forecast",
-                apiVersion: "2.5",
-                weatherEndpoint: "/forecast",
-                units: "imperial",
-                lat: 39.8956,
-                lon: -75.4952,
-                apiKey: "{{ openweathermap_api_key }}",
-                maxNumberOfDays: 5,
-                showRainAmount: true,
-            }
-        },
-
-        /* ── Letterkenny, Donegal — current conditions ── */
+        /* ── Row 2 left: Letterkenny, Donegal — current ── */
         {
             module: "weather",
             position: "top_left",
@@ -110,29 +82,10 @@ let config = {
             }
         },
 
-        /* ── Letterkenny, Donegal — 3-day forecast ── */
-        {
-            module: "weather",
-            position: "top_left",
-            header: "Letterkenny — Forecast",
-            config: {
-                weatherProvider: "openweathermap",
-                type: "forecast",
-                apiVersion: "2.5",
-                weatherEndpoint: "/forecast",
-                units: "metric",
-                lat: 54.9558,
-                lon: -7.7342,
-                apiKey: "{{ openweathermap_api_key }}",
-                maxNumberOfDays: 3,
-                showRainAmount: true,
-            }
-        },
-
-        /* ── Security Cameras: Eufy S380 snapshots via go2rtc ── */
+        /* ── Row 2 center: Security Cameras ── */
         {
             module: "MMM-CameraSnapshots",
-            position: "middle_center",
+            position: "top_center",
             header: "Security Cameras",
             config: {
                 cameras: [
@@ -140,34 +93,35 @@ let config = {
                     { name: "Breezeway",  url: "http://go2rtc.geek/api/frame.jpeg?src=breezeway" },
                     { name: "Garage",     url: "http://go2rtc.geek/api/frame.jpeg?src=garage" },
                 ],
-                rotateInterval: 30000,    /* show each camera for 30 seconds */
-                refreshInterval: 15000,   /* refresh snapshot every 15 seconds */
+                rotateInterval: 30000,
+                refreshInterval: 15000,
                 width: "480px",
                 height: "360px",
             }
         },
 
-        /* ── Stocks: LMT, CMCSA, AAPL, NVDA (Yahoo Finance via MMM-Jast) ── */
+        /* ── Row 2 right: Glen Mills, PA — current ── */
         {
-            module: "MMM-Jast",
-            position: "bottom_bar",
-            header: "Markets",
+            module: "weather",
+            position: "top_right",
+            header: "Glen Mills, PA",
             config: {
-                stocks: [
-                    { name: "Lockheed",  symbol: "LMT"   },
-                    { name: "Comcast",   symbol: "CMCSA" },
-                    { name: "Apple",     symbol: "AAPL"  },
-                    { name: "NVIDIA",    symbol: "NVDA"  },
-                ],
-                updateInterval: 300000,   /* 5 minutes */
-                showChange: true,
-                showChangePercent: true,
-                currencyStyle: "symbol",
-                fadeSpeed: 1000,
+                weatherProvider: "openweathermap",
+                type: "current",
+                apiVersion: "2.5",
+                weatherEndpoint: "/weather",
+                units: "imperial",
+                lat: 39.8956,
+                lon: -75.4952,
+                apiKey: "{{ openweathermap_api_key }}",
+                showWindDirection: true,
+                showWindDirectionAsArrow: true,
+                showHumidity: true,
+                showFeelsLike: true,
             }
         },
 
-        /* ── World News: BBC + The Guardian ── */
+        /* ── Row 3 left: World News ── */
         {
             module: "newsfeed",
             position: "bottom_left",
@@ -187,12 +141,48 @@ let config = {
                 showPublishDate: true,
                 broadcastNewsFeeds: false,
                 broadcastNewsFeedItems: false,
-                reloadInterval: 300000,   /* 5 minutes */
-                updateInterval: 10000,    /* rotate every 10s */
+                reloadInterval: 300000,
+                updateInterval: 10000,
             }
         },
 
-        /* ── Local News: Philly Inquirer + 6ABC ── */
+        /* ── Row 3 center: Forecasts (both locations stacked) ── */
+        {
+            module: "weather",
+            position: "bottom_center",
+            header: "Letterkenny — Forecast",
+            config: {
+                weatherProvider: "openweathermap",
+                type: "forecast",
+                apiVersion: "2.5",
+                weatherEndpoint: "/forecast",
+                units: "metric",
+                lat: 54.9558,
+                lon: -7.7342,
+                apiKey: "{{ openweathermap_api_key }}",
+                maxNumberOfDays: 3,
+                showRainAmount: true,
+            }
+        },
+        {
+            module: "weather",
+            position: "bottom_center",
+            header: "Glen Mills — Forecast",
+            config: {
+                weatherProvider: "openweathermap",
+                type: "forecast",
+                apiVersion: "2.5",
+                weatherEndpoint: "/forecast",
+                units: "imperial",
+                lat: 39.8956,
+                lon: -75.4952,
+                apiKey: "{{ openweathermap_api_key }}",
+                maxNumberOfDays: 3,
+                showRainAmount: true,
+            }
+        },
+
+        /* ── Row 3 right: Local News ── */
         {
             module: "newsfeed",
             position: "bottom_right",
@@ -214,6 +204,26 @@ let config = {
                 broadcastNewsFeedItems: false,
                 reloadInterval: 300000,
                 updateInterval: 10000,
+            }
+        },
+
+        /* ── Row 4: Stock Ticker (bottom_bar) ── */
+        {
+            module: "MMM-Jast",
+            position: "bottom_bar",
+            header: "Markets",
+            config: {
+                stocks: [
+                    { name: "Lockheed",  symbol: "LMT"   },
+                    { name: "Comcast",   symbol: "CMCSA" },
+                    { name: "Apple",     symbol: "AAPL"  },
+                    { name: "NVIDIA",    symbol: "NVDA"  },
+                ],
+                updateInterval: 300000,
+                showChange: true,
+                showChangePercent: true,
+                currencyStyle: "symbol",
+                fadeSpeed: 1000,
             }
         },
     ]

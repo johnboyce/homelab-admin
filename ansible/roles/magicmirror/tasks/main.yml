@@ -1,10 +1,11 @@
 ---
 # MagicMirror² morning dashboard role
-# Manages: Docker service + Chromium kiosk + systemd display scheduling
+# Manages: Docker service + standalone X kiosk on VT8 + system-level timers
 # Secrets:  /etc/homelab/secrets/magicmirror.env (OPENWEATHERMAP_API_KEY)
 # Data:     /srv/homelab/magicmirror/
 # Access:   http://magicmirror.geek (LAN only, nginx proxy)
-# Requires: X11 session (GDM3 Wayland disabled by this role)
+
+# --- Secrets ---
 
 - name: Check MagicMirror secrets file exists
   stat:
@@ -38,6 +39,8 @@
     openweathermap_api_key: "{{ owm_key_result.stdout }}"
   no_log: true
   tags: [magicmirror, lifecycle]
+
+# --- Docker service ---
 
 - name: Ensure MagicMirror data directories exist
   file:
@@ -96,6 +99,8 @@
     msg: "MagicMirror container state: {{ magicmirror_info.container.State.Status | default('not found') }}"
   tags: [magicmirror, lifecycle]
 
+# --- Modules ---
+
 - name: Download MMM-Jast module tarball (Yahoo Finance stocks, no API key)
   shell: |
     curl -fsSL https://github.com/jalibu/MMM-Jast/archive/refs/heads/main.tar.gz \
@@ -116,14 +121,17 @@
   when: mmm_jast_downloaded.changed
   tags: [magicmirror, modules]
 
-- name: Ensure MMM-CameraSnapshots module directory exists
+- name: Ensure MMM-CameraSnapshots module and cache directories exist
   file:
-    path: /srv/homelab/magicmirror/modules/MMM-CameraSnapshots
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: '0755'
   become: yes
+  loop:
+    - /srv/homelab/magicmirror/modules/MMM-CameraSnapshots
+    - /srv/homelab/magicmirror/modules/MMM-CameraSnapshots/cache
   tags: [magicmirror, modules]
 
 - name: Deploy MMM-CameraSnapshots module files
@@ -140,54 +148,132 @@
   notify: Restart MagicMirror
   tags: [magicmirror, modules]
 
-# --- Host-level: X11 session (required for xset dpms) ---
+# --- Host-level: Package dependencies ---
 
-- name: Ensure chromium-browser is installed
+- name: Ensure kiosk packages are installed
   apt:
-    name: chromium-browser
+    name:
+      - chromium-browser
+      - xinit
+      - x11-xserver-utils
     state: present
     update_cache: yes
   become: yes
   tags: [magicmirror, kiosk]
 
-- name: Disable Wayland in GDM3 (xset dpms requires X11)
+- name: Allow any user to start X server (required for systemd kiosk service)
   lineinfile:
-    path: /etc/gdm3/custom.conf
-    regexp: '^#?WaylandEnable='
-    line: 'WaylandEnable=false'
-    insertafter: '^\[daemon\]'
-    backup: yes
+    path: /etc/X11/Xwrapper.config
+    regexp: '^allowed_users='
+    line: 'allowed_users=anybody'
   become: yes
   tags: [magicmirror, kiosk]
 
-- name: Enable GDM3 autologin for johnb (kiosk requires active X session)
+# --- GDM cleanup: remove auto-login and Wayland hack ---
+
+- name: Remove GDM3 autologin block (Ansible-managed markers)
   blockinfile:
     path: /etc/gdm3/custom.conf
     marker: "# {mark} ANSIBLE MANAGED — autologin"
-    insertafter: '^\[daemon\]'
-    block: |
-      AutomaticLoginEnable = true
-      AutomaticLogin = johnb
+    state: absent
   become: yes
   notify: Restart GDM
   tags: [magicmirror, kiosk]
 
-# --- Host-level: Kiosk autostart ---
+- name: Disable GDM3 automatic login
+  lineinfile:
+    path: /etc/gdm3/custom.conf
+    regexp: '^\s*AutomaticLoginEnable\s*='
+    state: absent
+  become: yes
+  notify: Restart GDM
+  tags: [magicmirror, kiosk]
 
-- name: Ensure johnb autostart and local bin directories exist
+- name: Remove GDM3 automatic login user
+  lineinfile:
+    path: /etc/gdm3/custom.conf
+    regexp: '^\s*AutomaticLogin\s*=\s*\w'
+    state: absent
+  become: yes
+  notify: Restart GDM
+  tags: [magicmirror, kiosk]
+
+- name: Remove forced WaylandEnable=false (kiosk uses its own X server)
+  lineinfile:
+    path: /etc/gdm3/custom.conf
+    regexp: '^WaylandEnable=false'
+    state: absent
+    backup: yes
+  become: yes
+  notify: Restart GDM
+  tags: [magicmirror, kiosk]
+
+# --- Legacy cleanup: stop and remove old user-level kiosk infrastructure ---
+
+- name: Stop and disable old user-level timers (ignore errors if not present)
+  shell: |
+    uid=$(id -u johnb)
+    sudo -u johnb \
+      XDG_RUNTIME_DIR=/run/user/$uid \
+      DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus \
+      systemctl --user disable --now {{ item }} 2>/dev/null || true
+  become: yes
+  changed_when: false
+  loop:
+    - magicmirror-wake.timer
+    - magicmirror-sleep.timer
+    - magicmirror-snapshot-cache.timer
+  tags: [magicmirror, cleanup]
+
+- name: Remove old user-level systemd unit files
   file:
-    path: "{{ item }}"
+    path: /home/johnb/.config/systemd/user/{{ item }}
+    state: absent
+  become: yes
+  loop:
+    - magicmirror-wake.service
+    - magicmirror-wake.timer
+    - magicmirror-sleep.service
+    - magicmirror-sleep.timer
+    - magicmirror-snapshot-cache.service
+    - magicmirror-snapshot-cache.timer
+  tags: [magicmirror, cleanup]
+
+- name: Remove legacy scripts from johnb home
+  file:
+    path: /home/johnb/.local/bin/{{ item }}
+    state: absent
+  become: yes
+  loop:
+    - magicmirror-keep-awake.sh
+    - magicmirror-kiosk.sh
+    - magicmirror-display-wake.sh
+    - magicmirror-display-sleep.sh
+  tags: [magicmirror, cleanup]
+
+- name: Remove legacy autostart entries
+  file:
+    path: /home/johnb/.config/autostart/{{ item }}
+    state: absent
+  become: yes
+  loop:
+    - magicmirror-kiosk.desktop
+    - display-noblank.desktop
+  tags: [magicmirror, cleanup]
+
+# --- Deploy new kiosk scripts ---
+
+- name: Ensure johnb local bin directory exists
+  file:
+    path: /home/johnb/.local/bin
     state: directory
     owner: johnb
     group: johnb
     mode: '0755'
   become: yes
-  loop:
-    - /home/johnb/.config/autostart
-    - /home/johnb/.local/bin
   tags: [magicmirror, kiosk]
 
-- name: Deploy kiosk and display management scripts
+- name: Deploy kiosk scripts
   copy:
     src: "{{ item }}"
     dest: /home/johnb/.local/bin/{{ item }}
@@ -196,76 +282,90 @@
     mode: '0755'
   become: yes
   loop:
-    - magicmirror-kiosk.sh
-    - magicmirror-display-sleep.sh
-    - magicmirror-display-wake.sh
+    - magicmirror-kiosk-x11.sh
+    - magicmirror-kiosk-wake.sh
+    - magicmirror-kiosk-sleep.sh
+    - magicmirror-kiosk-boot-check.sh
+    - magicmirror-snapshot-cache.sh
   tags: [magicmirror, kiosk]
 
-- name: Deploy Chromium kiosk autostart entry
+# --- Deploy system-level systemd units ---
+
+- name: Deploy kiosk systemd service
   copy:
-    src: magicmirror-kiosk.desktop
-    dest: /home/johnb/.config/autostart/magicmirror-kiosk.desktop
-    owner: johnb
-    group: johnb
+    src: magicmirror-kiosk.service
+    dest: /etc/systemd/system/magicmirror-kiosk.service
+    owner: root
+    group: root
     mode: '0644'
   become: yes
-  tags: [magicmirror, kiosk]
-
-- name: Deploy display no-blank autostart entry
-  copy:
-    src: display-noblank.desktop
-    dest: /home/johnb/.config/autostart/display-noblank.desktop
-    owner: johnb
-    group: johnb
-    mode: '0644'
-  become: yes
-  tags: [magicmirror, kiosk]
-
-# --- Host-level: systemd user timers for display wake/sleep ---
-
-- name: Ensure johnb systemd user directory exists
-  file:
-    path: /home/johnb/.config/systemd/user
-    state: directory
-    owner: johnb
-    group: johnb
-    mode: '0755'
-  become: yes
+  notify: Reload systemd
   tags: [magicmirror, schedule]
 
-- name: Deploy display wake/sleep systemd units
+- name: Deploy kiosk wake/sleep systemd units
   copy:
-    src: "{{ item }}"
-    dest: /home/johnb/.config/systemd/user/{{ item }}
-    owner: johnb
-    group: johnb
+    src: "{{ item.src }}"
+    dest: /etc/systemd/system/{{ item.dest }}
+    owner: root
+    group: root
     mode: '0644'
   become: yes
   loop:
-    - magicmirror-wake.service
-    - magicmirror-wake.timer
-    - magicmirror-sleep.service
-    - magicmirror-sleep.timer
-  notify: Reload user systemd
+    - { src: magicmirror-kiosk-wake.service, dest: magicmirror-kiosk-wake.service }
+    - { src: magicmirror-kiosk-wake.timer, dest: magicmirror-kiosk-wake.timer }
+    - { src: magicmirror-kiosk-sleep.service, dest: magicmirror-kiosk-sleep.service }
+    - { src: magicmirror-kiosk-sleep.timer, dest: magicmirror-kiosk-sleep.timer }
+  notify: Reload systemd
   tags: [magicmirror, schedule]
 
-- name: Enable lingering for johnb (timers survive logout)
-  command: loginctl enable-linger johnb
+- name: Deploy kiosk boot-check service
+  copy:
+    src: magicmirror-kiosk-boot.service
+    dest: /etc/systemd/system/magicmirror-kiosk-boot.service
+    owner: root
+    group: root
+    mode: '0644'
   become: yes
-  changed_when: false
+  notify: Reload systemd
   tags: [magicmirror, schedule]
 
-- name: Enable and start display scheduling timers
+- name: Deploy snapshot cache systemd units
+  copy:
+    src: "{{ item.src }}"
+    dest: /etc/systemd/system/{{ item.dest }}
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  loop:
+    - { src: magicmirror-snapshot-cache-system.service, dest: magicmirror-snapshot-cache.service }
+    - { src: magicmirror-snapshot-cache-system.timer, dest: magicmirror-snapshot-cache.timer }
+  notify: Reload systemd
+  tags: [magicmirror, schedule]
+
+# --- Enable and start system-level timers ---
+
+- name: Flush handlers to ensure daemon-reload runs before enabling timers
+  meta: flush_handlers
+  tags: [magicmirror, schedule]
+
+- name: Enable and start system-level timers
   systemd:
     name: "{{ item }}"
     enabled: yes
     state: started
-    scope: user
+    daemon_reload: yes
   become: yes
-  become_user: johnb
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
   loop:
-    - magicmirror-wake.timer
-    - magicmirror-sleep.timer
+    - magicmirror-kiosk-wake.timer
+    - magicmirror-kiosk-sleep.timer
+    - magicmirror-snapshot-cache.timer
+  tags: [magicmirror, schedule]
+
+- name: Enable boot-check service (starts kiosk if boot occurs during wake window)
+  systemd:
+    name: magicmirror-kiosk-boot.service
+    enabled: yes
+    daemon_reload: yes
+  become: yes
   tags: [magicmirror, schedule]

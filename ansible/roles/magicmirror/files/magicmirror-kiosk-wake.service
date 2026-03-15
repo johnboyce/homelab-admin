@@ -1,0 +1,9 @@
+[Unit]
+Description=Wake MagicMirror kiosk — start X server and switch VT
+After=graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/johnb/.local/bin/magicmirror-kiosk-wake.sh
+StandardOutput=journal
+StandardError=journal
