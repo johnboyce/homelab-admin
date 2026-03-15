@@ -18,7 +18,7 @@ services:
             --instance "$$FORGEJO_INSTANCE_URL" \
             --token "$$FORGEJO_RUNNER_REGISTRATION_TOKEN" \
             --name "geek-runner" \
-/btw            --labels "ubuntu-latest:docker://node:20-bullseye,ubuntu-22.04:docker://node:20-bullseye,debian-latest:docker://debian:bookworm,java-21:docker://geek/java-21-node:latest"
+            --labels "ubuntu-latest:docker://node:20-bullseye,ubuntu-22.04:docker://node:20-bullseye,debian-latest:docker://debian:bookworm,java-21:docker://geek/java-21-node:latest"
         fi
         exec forgejo-runner daemon
     volumes:
