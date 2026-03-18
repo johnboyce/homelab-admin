@@ -35,3 +35,6 @@ ENV PATH="${GRADLE_HOME}/bin:${MAVEN_HOME}/bin:${PATH}"
 # Maven 3.9.x
 RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz | \
     tar -xz -C /opt
+
+# Qodana CLI
+RUN curl -fsSL https://jb.gg/qodana-cli/install | bash
